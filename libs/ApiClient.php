@@ -239,6 +239,10 @@ class ApiClient
 
     // JWT
     function setJWTAuth($token_jwt){
+        if (empty($token_jwt)){
+            throw new \InvalidArgumentException("Token no puede quedar vacio");
+        }
+
         $this->setHeaders([
             "Authorization: Bearer $token_jwt"
         ]);

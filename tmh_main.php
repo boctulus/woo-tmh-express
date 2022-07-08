@@ -32,11 +32,11 @@ require_once __DIR__ . '/helpers/cli.php';
 #require __DIR__ . '/ajax.php';
 
 
-if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
+#if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	ini_set('display_errors', 1);
 	ini_set('display_startup_errors', 1);
 	error_reporting(E_ALL);
-}
+#}
 
 
 if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):

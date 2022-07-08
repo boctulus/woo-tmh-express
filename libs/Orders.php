@@ -134,6 +134,12 @@ class Orders
         return static::getOrderById($id);
     }
 
+    static function getLastOrder(){
+        return \wc_get_order(
+            static::getLastOrderId()
+        );
+    }
+
     static function getOrderItems(\Automattic\WooCommerce\Admin\Overrides\Order $order_object){
         return $order_object->get_items();
     }

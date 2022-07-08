@@ -18,13 +18,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 */
 
 
-if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
+#if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	ini_set('display_errors', 1);
 	ini_set('display_startup_errors', 1);
 	error_reporting(E_ALL);
-}
+#}
 
 
-include 'main.php';
+include_once 'tmh_main.php';
 
 
