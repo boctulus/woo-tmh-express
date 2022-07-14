@@ -84,7 +84,7 @@ dd(
 			'pieces' => 1,
 			'weight' => 1,
 			),
-			'containt' => 'Prueba',
+			'contains' => 'Prueba',
 			'type_product' => 'Documentos',
 		),
 	],$cfg['endpoints']['create_order'])
