@@ -35,39 +35,57 @@ error_reporting(E_ERROR | E_PARSE);
 
 $cfg = include __DIR__ . '/config.php'; 
 
-dd(
-	WooTMHExpress::get($cfg['endpoints']['get_orders'])
-);
+// dd(
+// 	WooTMHExpress::get($cfg['endpoints']['get_orders'])
+// );
 
-exit;
+// exit;
 
+/*
+	Si es exitosa devuelve
+
+	array (
+		'data' =>
+			array (
+				'order_id' => 247,
+				'guide' => 514181,
+				'message' => 'La orden a sido creada de forma exitosa.',
+			),
+		'http_code' => 200,
+		'errors' => '',
+	)
+*/
 dd(
-	WooTMHExpress::registrar('
-	{
-		"origin": {
-			"address": "Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX",
-			"latitude": 19.402299677796147,
-			"longitude": -99.183665659261
-		},
-		"destination":{
-			"address": "Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX",
-			"latitude": 19.402299677796147,
-			"longitude": -99.183665659261
-		},
-		"contact": {
-			"number_identification": 123456,
-			"full_name": "John Smith",
-			"phone": "5512213456",
-			"email": "john.smith@ivoy.mx"
-		},
-		"package": {
-			"dimensions": {
-				"volume": 1,
-				"pieces": 1,
-				"weight": 1
-			},
-			"containt": "Prueba",
-			"type_product": "Documentos"
-		}
-	}',$cfg['endpoints']['create_order'])
+	WooTMHExpress::registrar([
+		'origin' =>
+		array (
+			'address'   => $cfg['origin']['address'],
+			'latitude'  => $cfg['origin']['latitude'],
+			'longitude' => $cfg['origin']['longitude'],
+		),
+		'destination' =>
+		array (
+			'address' => 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX',
+			'latitude' => 19.402299677796147,
+			'longitude' => -99.183665659261,
+		),
+		'contact' =>
+		array (
+			'number_identification' => 123456,
+			'full_name' => 'John Smith',
+			'phone' => '5512213456',
+			'email' => 'john.smith@ivoy.mx',
+		),
+		'package' =>
+		array (
+			'dimensions' =>
+			array (
+			'volume' => 1,
+			'pieces' => 1,
+			'weight' => 1,
+			),
+			'containt' => 'Prueba',
+			'type_product' => 'Documentos',
+		),
+	],$cfg['endpoints']['create_order'])
 );
