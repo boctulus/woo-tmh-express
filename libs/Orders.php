@@ -313,7 +313,18 @@ class Orders
             'total_tax_non_discounted'  => $total_tax_non_discounted,
             'total_tax_discounted' => $total_tax_discounted
         ];
+    }
 
+    static function getOrderItemArray(object $order){
+        $order_items = Orders::getOrderItems($order);
+
+        $items = [];
+        foreach ( $order_items as $item_id => $item ) 
+        {
+            $items[] = Orders::orderItemToArray($item);
+        }
+
+        return $items;
     }
 
 }
