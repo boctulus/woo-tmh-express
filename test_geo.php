@@ -6,6 +6,7 @@ use boctulus\WooTMHExpress\libs\Date;
 use boctulus\WooTMHExpress\libs\Files;
 use boctulus\WooTMHExpress\libs\Mail;
 use boctulus\WooTMHExpress\libs\WooTMHExpress;
+use boctulus\WooTMHExpress\libs\Maps; ///
 
 // ...
 
@@ -29,6 +30,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $cfg = \boctulus\WooTMHExpress\helpers\config();
 
+$address = 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX';
+
 dd(
-	WooTMHExpress::get($cfg['endpoints']['get_orders'])
+	Maps::getCoord($address)
 );

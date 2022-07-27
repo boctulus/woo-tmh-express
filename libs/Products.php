@@ -12,11 +12,25 @@ if ( ! function_exists( 'wp_crop_image' ) ) {
     Product utility class
 */
 class Products
-{    
+{
+    // Investigar '_transient_wc_attribute_taxonomies' como option_name en wp_options
+
     static function productExists($sku){
-        return !empty(static::getProductIdBySKU($sku));
+        global $wpdb;
+
+        $product_id = $wpdb->get_var(
+            $wpdb->prepare("SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value='%s'", $sku)
+        );
+
+        return is_numeric($product_id) && $product_id !== 0;
     }
 
+    static function productIDExists($prod_id){
+        $p = \wc_get_product($prod_id);
+
+        return !empty($p);
+    }
+        
     static function getProduct($product){
         $p =  is_object($product) ? $product : \wc_get_product($product);
         return $p;
@@ -33,6 +47,22 @@ class Products
 
         return wc_get_products($cond);
     }
+
+    static function getIDs($post_type = 'product', $post_status = null){
+        global $wpdb;
+
+        $include_post_status = '';
+        if ($post_status !== null){
+            $include_post_status = "AND post_status = '$post_status'";
+        }
+
+        $sql = "SELECT ID FROM `{$wpdb->prefix}posts` WHERE post_type = '$post_type' $include_post_status";
+       
+
+        $res = $wpdb->get_results($sql, ARRAY_A);   
+
+        return  array_column($res, 'ID') ?? null;
+	}
 
     static function getLastPost($post_type = 'product', $post_status = null){
         global $wpdb;
@@ -77,10 +107,32 @@ class Products
         $sql = "SELECT SQL_CALC_FOUND_ROWS  * FROM {$wpdb->prefix}posts  WHERE 1=1  AND (({$wpdb->prefix}posts.post_type = '$post_type' AND ({$wpdb->prefix}posts.post_status = '$status')));";
     
         return $wpdb->get_row($sql, ARRAY_A);
+    }    
+
+    static function getProductPropertiesBySKU($sku){
+        $result_ay = static::getByMeta('SKU', $sku);
+
+        if (empty($result_ay)){
+            return;
+        }
+
+        return $result_ay[0];
     }
 
     static function getProductIdBySKU($sku){
-        return \wc_get_product_id_by_sku($sku);
+        $pid = wc_get_product_id_by_sku($sku);
+
+        if (!empty($pid)){
+            return $pid;
+        }
+
+        $result_ay = static::getByMeta('SKU', $sku);
+
+        if (empty($result_ay)){
+            return;
+        }
+
+        return $result_ay[0]['ID'];
     }
 
     static function setStatus($pid, $status){
@@ -218,6 +270,7 @@ class Products
         return $valores;
     }
 
+
     /*
         Get Metadata by Product Id (pid)
 
@@ -288,7 +341,7 @@ class Products
         return !Strings::endsWith('/placeholder.png', $src);
     }
 
-    function getTagsByPid($pid){
+    static function getTagsByPid($pid){
 		global $wpdb;
 
 		$pid = (int) $pid;
@@ -378,6 +431,11 @@ class Products
         return true;
     }
 
+    static function deleteProductBySKU($sku, bool $permanent = false){
+        $pid = static::getProductIdBySKU($sku);
+		static::deleteProduct($pid, $permanent);
+    }
+
     static function deleteLastProduct($force = false){
         $pid = static::getLastPid();
         static::deleteProduct($pid, $force);
@@ -396,6 +454,15 @@ class Products
         $wpdb->query("DELETE FROM {$prefix}posts WHERE post_type IN ('product','product_variation')");
         $wpdb->query("DELETE pm FROM {$prefix}postmeta pm LEFT JOIN {$prefix}posts wp ON wp.ID = pm.post_id WHERE wp.ID IS NULL");
     } 
+
+    static function getRandomProductIds($qty = 1, $type = 'product'){
+        global $wpdb;
+
+        $sql = "SELECT ID FROM {$wpdb->prefix}posts WHERE post_type IN ('$type') ORDER BY RAND() LIMIT $qty";
+
+        $res = $wpdb->get_results($sql, ARRAY_A);
+        return array_column($res, 'ID');
+    }
 
     static function getAttachmentIdFromSrc ($image_src) {
         global $wpdb;
@@ -540,11 +607,21 @@ class Products
         return $att_id;
     }
 
+    /*
+        Todos los atributos "nativos" parecen comenzar con "_". Ej:
+        
+        para tax_class es _tax_class
+        para thumbnail_id es _thumbnail_id
+        etc
+    */  
+    static function setPostAttribute($pid, $key, $value){
+        update_post_meta($pid, $key, $value);
+    }
+    
     static function setDefaultImage($pid, $image_id){
         //dd("Updating default image for post with PID $pid");
         update_post_meta( $pid, '_thumbnail_id', $image_id );
     }
-
 
     static function setImagesForPost($pid, Array $image_ids){
         //dd("Updating images for post with PID $pid");
@@ -552,15 +629,36 @@ class Products
         update_post_meta($pid, '_product_image_gallery', $image_ids);
     }
 
+    static function getProductCategoryNames($pid){
+        return wp_get_post_terms( $pid, 'product_cat', array('fields' => 'names') );
+    }
+
+    /*
+        Sobre-escribe cualquier categoria previa
+    */
     static function setProductCategoryNames($pid, Array $categos){
         if (count($categos) >0 && is_array($categos[0])){
-            //dd($categos, 'CATEGORIES');
             throw new \InvalidArgumentException("Categorias no pueden ser array de array");
         }
 
         wp_set_object_terms($pid, $categos, 'product_cat');
     }
 
+    /*
+        Agrega nuevas categorias
+    */
+    static function addProductCategoryNames($pid, Array $categos){
+        $current_categos = static::getProductCategoryNames($pid);
+
+        if (!empty($categos)){
+            $current_categos = array_diff($current_categos, ['Uncategorized']);
+        }
+
+        $categos = array_merge($current_categos, $categos);
+
+        static::setProductCategoryNames($pid, $categos);
+    }
+    
     static function setProductTagNames($pid, Array $names){
         if (count($names) >0 && is_array($names[0])){
             //dd($names, 'TAGS');
@@ -599,16 +697,22 @@ class Products
     }
 
 
-    static function updateProductBySku( $args, $update_images_even_it_has_featured_image = true )
+    static function updateProductBy($by = 'pid', $args, $update_images_even_it_has_featured_image = true )
     {
-        if (!isset($args['sku']) || empty($args['sku'])){
-            throw new \InvalidArgumentException("SKU es requerido");
-        }
+        if ($by === 'pid'){
+            $pid = $args['id'];
+        } else {
+            // by sku
 
-        $pid = static::getProductIdBySKU($args['sku']);
-
-        if (empty($pid)){
-            throw new \InvalidArgumentException("SKU {$args['sku']} no encontrado");
+            if (!isset($args['sku']) || empty($args['sku'])){
+                throw new \InvalidArgumentException("SKU es requerido");
+            }
+    
+            $pid = static::getProductIdBySKU($args['sku']);
+    
+            if (empty($pid)){
+                throw new \InvalidArgumentException("SKU {$args['sku']} no encontrado");
+            }
         }
 
         $product = wc_get_product($pid);
@@ -845,11 +949,15 @@ class Products
         }
     }
 
+    static function updateProductBySku($args, $update_images_even_it_has_featured_image = true ){
+        return static::updateProductBy('sku', $args, $update_images_even_it_has_featured_image);
+    }
+
     /*
         Use *after* post creation
 
         @param $pid product id
-        @param array[] $attributes - This needs to be an array containing ALL your attributes so it can insert them in one go
+        @param array[] $attributes - This needs to be an array containing *ALL* your attributes so it can insert them in one go
 
         Ex.
 
@@ -871,8 +979,10 @@ class Products
         )
 
         Creo estos son los atributos no-reusables
+
+        Viejo nombre: createProductAttributesForSimpleProducs
     */
-    static function createProductAttributesForSimpleProducs($pid, Array $attributes){
+    static function setProductAttributesForSimpleProducts($pid, Array $attributes){
         $i = 0;
 
         if (empty($attributes)){
@@ -902,32 +1012,104 @@ class Products
     }
 
     /*
-        Utility function that prepare product attributes before saving
+        Forma de uso:
 
-        https://gist.github.com/alphasider/b9916b51083c48466f330ab0006328e6
+        Products::addAttributeForSimpleProducts($pid, 'vel', '80');
+    */
+    static function addAttributeForSimpleProducts($pid, $key, $val){
+        /*
+            array (
+                0 =>
+                array (
+                    'name' => 'stock',
+                    'value' => 'out of stock',
+                    'position' => 1,
+                    'is_visible' => 1,
+                    'is_variation' => 0,
+                    'is_taxonomy' => 0,
+                ),
+            ), ..
+        */
+        
+        $_attrs = Products::getCustomAttr($pid);
+        $attrs  = [];
+    
+        foreach($_attrs as $att){
+            $attrs[ $att['name'] ] = $att['value'];
+        }
+    
+        $attrs[ $key ] = $val;
+    
+        Products::setProductAttributesForSimpleProducts($pid, $attrs);
+    }
+    
+    /*
+        Forma de uso:
 
-        'attributes'         => array(
-        // Taxonomy and term name values
-        'pa_color' => array(
-            'term_names' => array('Red', 'Blue'),
-            'is_visible' => true,
-            'for_variation' => false,
-        ),
-        'pa_size' =>  array(
-            'term_names' => array('X Large'),
-            'is_visible' => true,
-            'for_variation' => false,
-        ),
+        Products::addAttributesForSimpleProducts($pid, [
+            'fuerza' => 45,
+            'edad' => 29
+        ]);
+    */
+    static function addAttributesForSimpleProducts($pid, Array $attributes)
+    {
+        if (!Arrays::is_assoc($attributes)){
+            throw new \InvalidArgumentException("El Array de atributos debe ser asociativo");
+        }
 
-        It works even for Simple products althought them they can not be used.
+        $_attrs = Products::getCustomAttr($pid);
+        $attrs  = [];
+    
+        foreach($_attrs as $att){
+            $attrs[ $att['name'] ] = $att['value'];
+        }
 
-        ---
+        /*
+            Nuevos atributos
+        */
+        foreach ($attributes as $key => $val){
+            $attrs[ $key ] = $val;
+        }
+    
+        Products::setProductAttributesForSimpleProducts($pid, $attrs);
+    }
 
-        Crea / inserta terminos en atributos re-utilizables
+    // alias
+    static function updateProductAttributesForSimpleProducts($pid, Array $att){
+        static::addAttributesForSimpleProducts($pid, $att);
+    }   
+
+    static function removeAllAttributesForSimpleProducts($pid){
+        update_post_meta($pid, '_product_attributes', []);
+    }
+
+    /*`
+        Inserta terminos en atributos re-utilizables
 
         Pre-cond: los atributos deben existir.
 
         Nota: antes se llamaba createProductAttributes()
+
+        https://gist.github.com/alphasider/b9916b51083c48466f330ab0006328e6
+
+        array(
+            // Taxonomy and term name values
+            'pa_color' => array(
+                'term_names' => array('Red', 'Blue'),
+                'is_visible' => true,
+                'for_variation' => false,
+            ),
+            'pa_size' =>  array(
+                'term_names' => array('X Large'),
+                'is_visible' => true,
+                'for_variation' => false,
+            ),
+        )
+
+        It works even for Simple products althought them they can not be used
+
+
+        Los terminos son insertados en la tabla `wp_terms` 
     */
     static function insertAttTerms(Array $attributes, bool $for_variation){
 
@@ -994,28 +1176,6 @@ class Products
         }
 
         return $data;
-    }
-
-    /*
-        Delete Attribute Term by Name
-
-        Borra terminos agregados con insertAttTerms()
-    */
-    static function deleteTermByName($name){
-        global $wpdb;
-
-        $sql = "DELETE FROM `{$wpdb->prefix}terms` WHERE name = '$name'";
-        return $wpdb->get_results($sql);  
-    }
-
-     /*
-        Delete Attribute Term by Slug
-    */
-    static function deleteTermBySlug($slug){
-        global $wpdb;
-
-        $sql = "DELETE FROM `{$wpdb->prefix}terms` WHERE slug = '$slug'";
-        return $wpdb->get_results($sql);  
     }
 
     /*
@@ -1127,6 +1287,10 @@ class Products
         $product = static::createProductByObjectType( $args['type'] );
         if( ! $product )
             return false;
+
+        if (isset($args['product_url'])){
+            $product->set_product_url($args['product_url']);
+        }
 
         // Product name (Title) and slug
         $product->set_name( $args['name'] ); // Name (title).
@@ -1331,7 +1495,7 @@ class Products
             //@$product->variable_product_sync();
         }
 
-        return $pid;
+        return $product; //
     }
 
     static function dumpProduct($product){
@@ -1345,10 +1509,16 @@ class Products
 	
 		// Get Product General Info
 	  
-		$pid = $product->get_id();
+        if (is_object($product)){
+            $pid = $product->get_id();
+        } else {
+            $pid = $product;
+            $product = wc_get_product($pid);
+        }
 
 		$obj['id'] = $pid;;
 		$obj['type'] = $product->get_type();
+        $obj['product_url'] = ($product instanceof \WC_Product_External) ? $product->get_product_url() : null;
 		$obj['name'] = $product->get_name();
 		$obj['slug'] = $product->get_slug();
 		$obj['status'] = $product->get_status();
@@ -1400,7 +1570,7 @@ class Products
 		
 		// Get Product Taxonomies
 		
-		$obj['tags'] = self::getTagsByPid($pid);
+		$obj['tags'] = static::getTagsByPid($pid);
 
 
 		$obj['categories'] = [];
@@ -1742,6 +1912,9 @@ class Products
         Uso:
 				
 		Products::createAttributeTaxonomy(Precio EasyFarma Plus', 'precio_easyfarma_plus');
+
+        Los atributos son creados en la tabla `wp_woocommerce_attribute_taxonomies`
+
      */
     static function createAttributeTaxonomy($name, $new_slug, $translation_domain = null) 
     {
@@ -1882,7 +2055,7 @@ class Products
 
 
     /*
-        Devuelve custom attributes.  Probado con productos simples.
+        Devuelve custom attributes de productos simples. NO confundir con metas
 
         Ejemplo de uso:
 
@@ -2312,33 +2485,270 @@ class Products
         return $ret;
     }
 
-
     /*
-        Ej de uso
+        Devolucion de array de metas incluidos atributos de productos
 
-        Products::deleteCustomMetas([
-            'laboratorio',
-            'enfermedades',
-            'bioequivalente',
-            'principio_activo',
-            'forma_farmaceutica',
-            'control_de_stock',
-            'otros_medicamentos',
-            'dosis'
-        ])
+        array (
+            '_sku' =>
+            array (
+                0 => '7800063000770',
+            ),
+            '_regular_price' =>
+            array (
+                0 => '2790',
+            ),
+
+            // ...
+            
+            '_product_attributes' =>
+            array (
+                0 => 'a:0:{}',
+            ),
+            
+            // ...
+
+            '_laboratorio' =>
+            array (
+                0 => 'Mintlab',
+            ),
+            '_enfermedades' =>
+            array (
+                0 => 'Gripe',
+            ),        
+        )
+
+        Si $single es true, en vez de devolver un array, se devuelve un solo valor,
+        lo cual tiene sentido con $key != ''
     */
-    function deleteCustomMetas(Array $metas){
-        global $wpdb;
-
-        foreach ($metas as $ix => $meta){
-            $metas[$ix] = "'$meta'";
+    static function getMetasByProduct($pid, $meta_key = '', bool $single = false){
+        if (!empty($meta_key)){
+            if (!Strings::startsWith('_', $meta_key)){
+                $meta_key = '_' . $meta_key;
+            }
         }
 
-        $metas_str = implode(',', $metas);
+        return get_post_meta($pid, $meta_key, $single);
+    }
 
-        $sql = "DELETE FROM `wp_postmeta` WHERE meta_key IN ($metas_str);";
+    static function getMeta($post_id, $meta_key){
+        if (!Strings::startsWith('_', $meta_key)){
+            $meta_key = '_' . $meta_key;
+        }
+
+        return get_post_meta($post_id, $meta_key, true);
+    }
+
+    static function setMeta($post_id, $meta_key, $dato, bool $sanitize = true){
+        if (!Strings::startsWith('_', $meta_key)){
+            $meta_key = '_' . $meta_key;
+        }
+
+        if ($sanitize){
+            $dato = sanitize_text_field($dato);
+        }
+
+        update_post_meta( $post_id, $meta_key, $dato); 
+    }
+
+    /*
+        Retorna productos contienen determinado valor en una meta_key
+    */
+    static function getByMeta($meta_key, $meta_value, $post_type = 'product', $status = 'publish' ) {
+        global $wpdb;
+
+        if (!Strings::startsWith('_', $meta_key)){
+            $meta_key = '_' . $meta_key;
+        }
+
+        /*
+            SELECT p.*, pm.* FROM wp_postmeta pm
+            LEFT JOIN wp_posts p ON p.ID = pm.post_id 
+            WHERE p.post_type = 'product' 
+            AND pm.meta_key = '_forma_farmaceutica' 
+            AND pm.meta_value='triangulo'
+            AND p.post_status = 'publish'
+            ;
+        */
+        $sql = "SELECT p.*, pm.* FROM wp_postmeta pm
+        LEFT JOIN {$wpdb->prefix}posts p ON p.ID = pm.post_id 
+        WHERE p.post_type = '%s' 
+        AND pm.meta_key = '%s' 
+        AND pm.meta_value='%s'
+        AND p.post_status = '%s'
+        ";
+
+        $r = $wpdb->get_results($wpdb->prepare($sql, $post_type, $meta_key, $meta_value, $status), ARRAY_A);
     
-        $affected = $wpdb->query($sql);
-        return $affected;
+        return $r;
+    }
+
+    /*
+        Retorna la cantidad de productos contienen determinado valor en una meta_key
+    */
+    static function countByMeta($meta_key, $meta_value, $post_type = 'product', $status = 'publish' ) {
+        global $wpdb;
+
+        if (!Strings::startsWith('_', $meta_key)){
+            $meta_key = '_' . $meta_key;
+        }
+
+        /*
+            SELECT COUNT(*) FROM wp_postmeta pm
+            LEFT JOIN wp_posts p ON p.ID = pm.post_id 
+            WHERE p.post_type = 'product' 
+            AND pm.meta_key = '_forma_farmaceutica' 
+            AND pm.meta_value='crema'
+            AND p.post_status = 'publish'
+            ;
+        */
+        $sql = "SELECT COUNT(*) FROM wp_postmeta pm
+        LEFT JOIN wp_posts p ON p.ID = pm.post_id 
+        WHERE p.post_type = '%s' 
+        AND pm.meta_key = '%s' 
+        AND pm.meta_value='%s'
+        AND p.post_status = '%s'
+        ";
+
+        $r = (int) $wpdb->get_var($wpdb->prepare($sql, $post_type, $meta_key, $meta_value, $status));
+    
+        return $r;
+    }
+
+    /*
+        Uso. Ej:
+
+        Products::getTaxonomyFromTerm('Crema')
+
+        retorna
+
+        array (
+            0 => 'pa_forma_farmaceutica',
+            1 => 'pa_dosis',
+        )
+    */
+    static function getTaxonomyFromTerm(string $term_name){
+        global $wpdb;
+
+        /*  
+            SELECT * FROM wp_terms AS t 
+            LEFT JOIN wp_termmeta AS tm ON t.term_id = tm.term_id 
+            LEFT JOIN wp_term_taxonomy AS tt ON tt.term_id = t.term_id
+            WHERE t.name = 'Crema'
+        */
+
+        $sql = "SELECT taxonomy FROM wp_terms AS t 
+        LEFT JOIN {$wpdb->prefix}termmeta AS tm ON t.term_id = tm.term_id 
+        LEFT JOIN {$wpdb->prefix}term_taxonomy AS tt ON tt.term_id = t.term_id
+        WHERE name = '%s'";
+
+        $r = $wpdb->get_col($wpdb->prepare($sql, $term_name));
+    
+        return $r;
+    }
+
+    static function getTermIdsByTaxonomy(string $taxonomy){
+        global $wpdb;
+
+        if (!Strings::startsWith('pa_', $taxonomy)){
+            $taxonomy = 'pa_' . $taxonomy;
+        }
+
+        $sql = "SELECT term_id FROM `{$wpdb->prefix}term_taxonomy` WHERE `taxonomy` = '$taxonomy';";
+
+        return $wpdb->get_col($sql);
+    }
+
+    /*
+        Devuelve si un termino existe para una determinada taxonomia
+
+        Nota: atributos re-utilizables de productos variables son "terms" tambien
+    */
+    static function termExists($term_name, string $taxonomy){
+        if (!Strings::startsWith('pa_', $taxonomy)){
+            $taxonomy = 'pa_' . $taxonomy;
+        }
+        
+        return (term_exists($term_name, $taxonomy) !== null);
+    }
+
+
+    /*
+        Delete Attribute Term by Name
+
+        Borra los terminos agregados con insertAttTerms() de la tabla 'wp_terms' por taxonomia (pa_forma_farmaceutica, etc)
+    */
+    static function deleteTermByName(string $term_name, string $taxonomy, $args = []){
+        if (!Strings::startsWith('pa_', $taxonomy)){
+            $taxonomy = 'pa_' . $taxonomy;
+        }
+
+        $term_ids = static::getTermIdsByTaxonomy($taxonomy);
+
+        foreach ($term_ids as $term_id){
+            wp_delete_term($term_id, $taxonomy, $args);
+        }
+    }
+
+    static function hide($product){
+        if (is_object($product)){
+            $pid = $product->get_id();
+        } else {
+            $pid = $product;
+        }
+
+        $terms = array('exclude-from-search', 'exclude-from-catalog' ); // for hidden..
+        wp_set_post_terms($pid, $terms, 'product_visibility', false); 
+    }
+
+    static function unhide($product){
+        if (is_object($product)){
+            $pid = $product->get_id();
+        } else {
+            $pid = $product;
+        }
+
+        $terms = array();
+        wp_set_post_terms($pid, $terms, 'product_visibility', false); 
+    }
+
+    static function duplicate($pid, callable $new_sku = null, Array $props = []){
+        $p_ay = static::dumpProduct($pid);
+
+        if (!is_null($new_sku) && is_callable($new_sku)){
+            // Solo valido para un solo duplicado porque sino deberia mover el contador
+            $p_ay['sku'] = $new_sku($p_ay['sku']);
+
+            // dd(
+            //     static::productExists($p_ay['sku'])
+            // , "EXISTE PROD CON SKU '{$p_ay['sku']}' ???");
+
+            if (static::productExists($p_ay['sku'])){
+                //dd("Producto con SKU '{$p_ay['sku']}' ya existe. Abortando,...");
+                return;
+            }
+
+        } else {        
+            $p_ay['sku'] = null;
+        }
+
+        $p_ay = array_merge($p_ay, $props);
+
+        if (is_cli()){
+            dd($p_ay, $pid);
+        }
+
+        $dupe = static::createProduct($p_ay);
+
+        return $dupe;
+    }
+
+    /*
+        Mejor que $p->get_sku() ya que no requiere sea estrictamente numerico el SKU
+
+        Realmente es el $product_id que es buscado como _sku
+    */
+    static function getSKUFromProductId($product_id)
+    {
+        return static::getMeta($product_id, '_sku');
     }
 }

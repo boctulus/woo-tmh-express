@@ -10,8 +10,6 @@ use boctulus\WooTMHExpress\libs\Strings;
 use boctulus\WooTMHExpress\libs\Debug;
 use boctulus\WooTMHExpress\libs\Products;
 
-require_once __DIR__ . '/Products.php';
-
 /*
     Ver también
 
@@ -62,7 +60,7 @@ class Orders
         
         https://stackoverflow.com/a/31987151/980631
     */
-    static function createOrder(Array $products, Array $billing_address, Array $shipping_address = null, $attributes = [])
+    static function createOrder(Array $products, Array $billing_address = null, Array $shipping_address = null, $attributes = [])
     {   
         // Now we create the order
         $order = wc_create_order();
@@ -76,10 +74,12 @@ class Orders
             $order->add_product($p, $qty); 
         }
         
-        $order->set_address( $billing_address, 'billing' );
+        if (!empty($billing_address)){
+            $order->set_address( $billing_address, 'billing' );
+        }    
 
         if (!empty($shipping_address)){
-            $order->set_address( $billing_address, 'shipping' );
+            $order->set_address( $shipping_address, 'shipping' );
         }
 
         //
@@ -118,7 +118,7 @@ class Orders
         // Getting last Order ID (max value)
         $results = $wpdb->get_col( "
             SELECT MAX(ID) FROM {$wpdb->prefix}posts
-            WHERE post_type LIKE 'shop_order'
+            WHERE post_type = 'shop_order'
             AND post_status IN ('$statuses')
         " );
         return reset($results);
@@ -138,6 +138,23 @@ class Orders
         return \wc_get_order(
             static::getLastOrderId()
         );
+    }
+
+    /*
+        https://github.com/woocommerce/woocommerce/wiki/wc_get_orders-and-WC_Order_Query
+    */
+    static function getRecentOrders($days = 30, $user_id = null){
+        $args = array(            
+            'date_created' => '>' . ( time() - (DAY_IN_SECONDS * $days)),
+        );
+
+        if ($user_id !== null){
+            $args['customer_id'] = $user_id;
+        }
+        
+        $orders = wc_get_orders( $args );
+
+        return $orders;
     }
 
     static function getOrderItems(\Automattic\WooCommerce\Admin\Overrides\Order $order_object){

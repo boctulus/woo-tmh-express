@@ -15,8 +15,6 @@ require_once ABSPATH . 'wp-includes/PHPMailer/Exception.php';
 require_once ABSPATH . 'wp-includes/PHPMailer/PHPMailer.php';
 require_once ABSPATH . 'wp-includes/PHPMailer/SMTP.php';
 
-require_once __DIR__ . '/Files.php';
-
 
 class Mail 
 {

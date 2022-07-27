@@ -1,6 +1,7 @@
 <?php
 
+namespace boctulus\WooTMHExpress\helpers;
+
 function config(){
-    global $config;
-    return $config;
+    return include __DIR__ . '/../config/config.php';
 }

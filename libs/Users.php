@@ -30,6 +30,14 @@ class Users
     static function userExistsByEmail($email){
         return !empty( get_user_by( 'email', $email) );
     }
+
+    static function getUserIdByUsername($username){
+        $u = get_user_by( 'login', $username);
+
+        if (!empty($u)){
+            return $u->ID;
+        }
+    }
     
     /*
         https://wordpress.stackexchange.com/a/111788/99153
@@ -63,5 +71,36 @@ class Users
             return false;
 
         return in_array( $role, (array) $user->roles );
+    }
+
+    static function getRoleMames() {
+        global $wp_roles;
+        
+        if ( ! isset( $wp_roles ) )
+            $wp_roles = new \WP_Roles();
+        
+        return $wp_roles->get_names();
+    }
+
+    static function getUsersByRole(Array $roles) {
+        $query = new \WP_User_Query(
+           array(
+              'fields' => 'ID',
+              'role__in' => $roles,         
+           )
+        );
+
+        return $query->get_results();
+    }
+
+    static function getCustomerList() {
+        $query = new \WP_User_Query(
+           array(
+              'fields' => 'ID',
+              'role' => 'customer',         
+           )
+        );
+
+        return $query->get_results();
     }
 }

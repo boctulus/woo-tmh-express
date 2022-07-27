@@ -1,6 +1,6 @@
 <?php
 
-namespace boctulus\WooTMHExpress;
+#namespace boctulus\WooTMHExpress;
 
 /*
 	Woo TMH Express
@@ -17,19 +17,10 @@ use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Date;
 use boctulus\WooTMHExpress\libs\DB;
 
-require_once __DIR__ . '/libs/Arrays.php';
-require_once __DIR__ . '/libs/Url.php';
-require_once __DIR__ . '/libs/ApiClient.php';
-require_once __DIR__ . '/libs/Strings.php';
-require_once __DIR__ . '/libs/Files.php';
-require_once __DIR__ . '/libs/Debug.php';
-require_once __DIR__ . '/libs/Orders.php';
-require_once __DIR__ . '/libs/Date.php';
-require_once __DIR__ . '/libs/DB.php';
-
+require_once __DIR__ . '/helpers/config.php'; 
+require_once __DIR__ . '/helpers/autoloader.php'; // *
 require_once __DIR__ . '/helpers/debug.php';
 require_once __DIR__ . '/helpers/cli.php';
-#require __DIR__ . '/ajax.php';
 
 
 #if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){

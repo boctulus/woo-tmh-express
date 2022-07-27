@@ -6,6 +6,8 @@
 */
 
 return [
+    'namespace' => 'boctulus\WooTMHExpress',
+    
     'url_base_endpoints' => 'https://tmhexpress.uc.r.appspot.com/api/',
     'endpoints' => [
         'create_order' => 'createOrder',

@@ -9,11 +9,6 @@ namespace boctulus\WooTMHExpress\libs;
 use boctulus\WooTMHExpress\libs\Files;
 use boctulus\WooTMHExpress\libs\DB;
 
-require_once __DIR__ . '/Files.php';
-require_once __DIR__ . '/DB.php';
-
-require_once __DIR__ . '/../helpers/debug.php';
-require_once __DIR__ . '/../helpers/cli.php';
 
 class WooTMHExpress
 {  
@@ -22,12 +17,12 @@ class WooTMHExpress
             throw new \InvalidArgumentException("Endpoint es requerido");
         }
 
-        $config = require __DIR__ . '/../config.php';
+        $config = \boctulus\WooTMHExpress\helpers\config();
 
         $ruta  = $config['url_base_endpoints'] . $endpoint;
         $token = $config['token']; 
 
-        if (is_cli())
+        if (\boctulus\WooTMHExpress\helpers\is_cli())
             dd($ruta, 'ENDPOINT *****');
 
         $client = (new ApiClient($ruta));
