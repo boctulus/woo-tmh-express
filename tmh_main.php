@@ -22,6 +22,8 @@ require_once __DIR__ . '/helpers/autoloader.php'; // *
 require_once __DIR__ . '/helpers/debug.php';
 require_once __DIR__ . '/helpers/cli.php';
 
+require_once __DIR__ . '/id_to_checkout.php'; // agrega metabox con campo de identificacion
+
 
 #if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	ini_set('display_errors', 1);

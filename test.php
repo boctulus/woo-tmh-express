@@ -2,7 +2,7 @@
 
 use boctulus\WooTMHExpress\libs\Debug;
 use boctulus\WooTMHExpress\libs\Strings;
-use boctulus\WooTMHExpress\libs\Date;
+use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Files;
 use boctulus\WooTMHExpress\libs\Mail;
 use boctulus\WooTMHExpress\libs\WooTMHExpress;
@@ -29,6 +29,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $cfg = \boctulus\WooTMHExpress\helpers\config();
 
+
+$order_id = Orders::getLastOrderId();
+
 dd(
-	WooTMHExpress::get($cfg['endpoints']['get_orders'])
-);
+	WooTMHExpress::get_id_num_from_order($order_id)
+, "ID NUMBER for order_id = $order_id");
+
+
+// dd(
+// 	WooTMHExpress::get($cfg['endpoints']['get_orders'])
+// );

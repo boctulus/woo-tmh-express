@@ -7,11 +7,16 @@
 namespace boctulus\WooTMHExpress\libs;
 
 use boctulus\WooTMHExpress\libs\Files;
-use boctulus\WooTMHExpress\libs\DB;
+use boctulus\WooTMHExpress\libs\Maps;
 
 
 class WooTMHExpress
 {  
+    static function get_id_num_from_order($order_id){
+        $meta_key = 'id_num'; 
+        return get_post_meta($order_id, $meta_key, true);
+    }
+
     static function getClient($endpoint){
         if (empty($endpoint)){
             throw new \InvalidArgumentException("Endpoint es requerido");
@@ -66,6 +71,84 @@ class WooTMHExpress
         ;
 
         return $response;
+    }
+
+    /*
+        Ej:
+
+        $dest_address
+
+        'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX'
+
+        $customer_data 
+
+		array (
+			'number_identification' => 123456,
+			'full_name' => 'John Smith',
+			'phone' => '5512213456',
+			'email' => 'john.smith@ivoy.mx',
+		)
+		
+        $package_data 
+
+		array (
+			'dimensions' =>
+			array (
+			'volume' => 1,
+			'pieces' => 1,
+			'weight' => 1,
+			),
+			'containt' => 'Prueba',
+			'type_product' => 'Documentos',
+		),
+    */
+    static function registrarEnvio($dest_address, $customer_data, $package_data){
+        $cfg = \boctulus\WooTMHExpress\helpers\config();
+
+        $geo_ay = Maps::getCoord($dest_address);
+
+        return static::registrar([
+            'origin' =>
+            array (
+                'address'   => $cfg['origin']['address'],
+                'latitude'  => $cfg['origin']['latitude'],
+                'longitude' => $cfg['origin']['longitude'],
+            ),
+    
+            /*
+                Leer de la Orden y usar lib de geolocalizacion +++++++++++++
+            */
+    
+            'destination' =>
+            array (
+                'address'   => $dest_address,
+                'latitude'  => $geo_ay['lat'],
+                'longitude' => $geo_ay['lon'],
+            ),
+    
+            /*
+                Leer de la Orden
+            */
+    
+            'contact' =>
+            array (
+                'number_identification' => 123456,
+                'full_name' => 'John Smith',
+                'phone' => '5512213456',
+                'email' => 'john.smith@ivoy.mx',
+            ),
+            'package' =>
+            array (
+                'dimensions' =>
+                array (
+                'volume' => 1,
+                'pieces' => 1,
+                'weight' => 1,
+                ),
+                'containt' => 'Prueba',
+                'type_product' => 'Documentos',
+            ),
+        ],$cfg['endpoints']['create_order']);
     }
 
 }
