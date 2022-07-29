@@ -93,11 +93,11 @@ class WooTMHExpress
 
 		array (
 			'dimensions' =>
-			array (
-			'volume' => 1,
-			'pieces' => 1,
-			'weight' => 1,
-			),
+                array (
+                    'volume' => 1,
+                    'pieces' => 1,
+                    'weight' => 1,
+                ),
 			'containt' => 'Prueba',
 			'type_product' => 'Documentos',
 		),
@@ -130,24 +130,8 @@ class WooTMHExpress
                 Leer de la Orden
             */
     
-            'contact' =>
-            array (
-                'number_identification' => 123456,
-                'full_name' => 'John Smith',
-                'phone' => '5512213456',
-                'email' => 'john.smith@ivoy.mx',
-            ),
-            'package' =>
-            array (
-                'dimensions' =>
-                array (
-                'volume' => 1,
-                'pieces' => 1,
-                'weight' => 1,
-                ),
-                'containt' => 'Prueba',
-                'type_product' => 'Documentos',
-            ),
+            'contact' => $customer_data,
+            'package' => $package_data,
         ],$cfg['endpoints']['create_order']);
     }
 

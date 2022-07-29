@@ -1,6 +1,6 @@
 <?php
 
-#namespace boctulus\WooTMHExpress;
+namespace boctulus\WooTMHExpress;
 
 /*
 	Woo TMH Express
@@ -38,6 +38,8 @@ if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):
 		const BASE_URL = '<?= get_site_url() ?>';
 		const PLUGIN_URL = '<?= __DIR__ ?>';
 
+		// Revisar las siguientes funciones. Son necesarias?
+
 		function add_invoice_link(order_id, comprobante, pdf_url){
 			jQuery('#download-invoice-pdf-' + order_id).replaceWith('<a href="'+ pdf_url +'" target="_blank">'+ comprobante +'</a>')
 		}
@@ -53,52 +55,10 @@ if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):
 		function enable_button(order_id){
 			jQuery('#gestionar-envio-' + order_id).prop("disabled",false)
 		}
-
-		function ajaxCall(order_id){
-			disable_button(order_id);
-
-			jQuery.post(BASE_URL + '/wp-json/sinergia/v1/post?order_id=' + order_id)
-			.done(function(res){
-				//console.log('EXITO')
-				//console.log(data)
-				//console.log(res);
-
-				const comprobante = res.data.comprobante;
-				const pdf_url     = res.data.url_invoice;
-				
-				remove_button(order_id)
-				add_invoice_link(order_id, comprobante, pdf_url)
-			})
-			.fail(function(xhr, status, error) {
-				// error handling
-				//console.log('FALLO')
-
-				let res = xhr.responseJSON;
-				let msg = res.message;
-
-				// Alert o algo
-				alert(msg);
-
-				enable_button(order_id);
-
-				//console.log(xhr.responseJSON);
-				//console.log(status);
-				//console.log(error);
-			});
-		}
-
-		function sendRetry(event, order_id){
-			event.stopImmediatePropagation();
-			event.preventDefault();
-
-			ajaxCall(order_id);
-			return false;
-		}
+		
 	</script>
 <?php
 endif;
-
-
 
 // ADDING 2 NEW COLUMNS WITH THEIR TITLES
 add_filter( 'manage_edit-shop_order_columns', 'boctulus\WooTMHExpress\custom_shop_order_column', 20 );
@@ -111,7 +71,8 @@ function custom_shop_order_column($columns)
         $reordered_columns[$key] = $column;
         if( $key ==  'order_status' ){
             // Inserting after "Status" column
-            $reordered_columns['gestionar-envio'] = __( 'Gestionar envio','theme_domain');
+           
+			#$reordered_columns['gestionar-envio'] = __( 'Gestionar envio','theme_domain');
             $reordered_columns['download-invoice-pdf'] = __( 'Descargar PDF','theme_domain');
         }
     }
@@ -151,38 +112,19 @@ function custom_orders_list_column_content( $column, $order_id )
 
 			// $output = "<a href='$pdf_url' alt='pdf invoice $comprobante' target='_blank' id='$column-$order_id'>$anchor</a>";
 
-			break;
-		case 'gestionar-envio':
+		break;
+		// case 'gestionar-envio':
 
-			/*
-				El enlace debe hacer un llamado Ajax y
-				la respuesta debe salir en un alert
-			*/
-
-			// if (in_array($order_id, $fallidos)){
-			// 	// SEGUIR
-			$output = "<button id='$column-$order_id' onclick='gestionarEnvio(event, $order_id);'>Enviar</button>";
-			// }
-
-			$order = Orders::getOrderById($order_id);
-
-			// dd(
-			// 	Orders::getCustomerData($order)
-			// , 'CUSTOMER DATA');
-
-			// redondeo a máximo N decimales
-			$round = function($num){
-				$num = (float) $num;
-				return round($num, 5);
-			};
 			
+		// 	$output = "<button id='$column-$order_id' onclick='gestionarEnvio(event, $order_id);'>Enviar</button>";
+			
+		// 	$order = Orders::getOrderById($order_id);
 
-			dd(
-				Orders::getOrderItemArray($order), 'ITEMS'
-			);
+		// 	dd(
+		// 		Orders::getOrderItemArray($order), 'ITEMS'
+		// 	);
 		
-
-			break;
+		// break;
     }
 
 	echo $output;

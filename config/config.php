@@ -12,8 +12,11 @@ return [
         Input en el checkout
 
         Si existe un campo similar en el checkout deberia poder especificarse y este no usarse
+
+        Digamos si 'input_id_name' != 'id_num'
     */
 
+    'input_id_name'       => 'id_num',
     'input_placeholder'   => 'Su ID',
     'input_required'      => true,
     'text_input_required' => 'El campo ID es requerido',
