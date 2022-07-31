@@ -22,9 +22,8 @@ function after_place_order($order_id, $status_from, $status_to)
     //var_dump($order_id);
     //var_dump ([$old_status, $new_status]);
 
-    if( $status_to == "completed" ) 
+    if( $status_to == $config['order_status_trigger'] ) 
     {
-        $alert0x4 = false;
         $notas = [];						
     
         $order = new \WC_Order($order_id);	
@@ -33,33 +32,28 @@ function after_place_order($order_id, $status_from, $status_to)
             session_start();
         }
         
-        if (time() < $_SESSION['server_not_before']){
+        if (isset($_SESSION['server_not_before']) && (time() < $_SESSION['server_not_before'])){
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
             return;
         }
             
-        $items = [];
-        foreach ($order->get_items() as $item_key => $item ){
-            dd($item, 'ITEM');  //////////
+        $package = [];
+        foreach ($order->get_items() as $item_key => $item )
+        {
+            Files::localDump($item, 'ITEMS.txt');
 
             $item_id     = $item->get_id();
             $product_id  = $item->get_product_id(); 
-
-            dd($product_id, 'PROD ID'); /////
-
+            
             $meta = get_post_meta($product_id);
             
-            $l = $meta['_length'][0] ?? 0;
-            $w = $meta['_width'][0]  ?? 0;
-            $h = $meta['_height'][0] ?? 0;
-            $W = $meta['_weight'][0] ?? 0;
+            $l = $meta['_length'][0] ?? null;
+            $w = $meta['_width'][0]  ?? null;
+            $h = $meta['_height'][0] ?? null;
+            $W = $meta['_weight'][0] ?? null;
             $Q = $item->get_quantity();
-            
-            if ($l == 0 && $w == 0 && $h == 0 && $W == 0){
-                $alert0x4 = true;	
-            }
-            
-            $items['dimensions'][] = [
+             
+            $package['dimensions'] = [
                 'volume' => $l * $w * $h,
                 'weight' => $W,
                 'pieces' => $Q
@@ -68,6 +62,15 @@ function after_place_order($order_id, $status_from, $status_to)
             //debug([$l, $w, $h, $W], 'Dimmensions');
             //debug($meta, "meta para prod id = $item_id");
         }
+
+
+        /*
+            Campos obligatorios (hardcodeados)
+        */
+
+        $package["containt"]     = "Prueba";
+        $package["type_product"] = "Documentos";
+
 
         $timezone = date_default_timezone_get();
         
@@ -102,37 +105,31 @@ function after_place_order($order_id, $status_from, $status_to)
         $shipping_note       = NULL;
         
         //debug($order, 'ORDER OBJECT');
-        
-        if ($alert0x4){
-            $notas[] = TMH_NO_DIM;
-            
-            if ($shipping_note == null){
-                $shipping_note = TMH_NO_DIM;
-            }
-        }
-        
+    
                     
         /*
             Cotizacion
         */
-    
-        $cotizacion = $config['shipping_cost'];
             
         $data = [
                     "dest_address" => "$shipping_address_1, $shipping_address_2, $shipping_city, $shipping_country",
                     "customer" => [
                         "number_identification" => WooTMHExpress::get_id_num_from_order($order_id),
                         "full_name"   => "$shipping_last_name, $shipping_first_name ",
+                        "phone" => $billing_phone,
                         "email"    => $billing_email,
-                        "phone" => $billing_phone
                     ],
-                    "package"  => $items,
+                    "package"  => $package,
                     "notes"    => $shipping_note
         ];		
         
         
         try {
             $recoleccion_res = WooTMHExpress::registrarEnvio($data['dest_address'], $data['customer'], $data['package']);
+
+            Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
+            Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
+
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
@@ -154,7 +151,7 @@ function after_place_order($order_id, $status_from, $status_to)
         }	
         
         
-        $order->update_status('completed', $shipping_note == null ? TMH_TODO_OK : $shipping_note);        
+        $order->update_status($config['order_status_trigger'], $shipping_note == null ? TMH_TODO_OK : $shipping_note);        
     }	
 }
 
@@ -176,7 +173,7 @@ function tmh_shipping_method_init()
             $this->method_description = __( 'Integración con TMH' ); 
 
             $this->enabled            = "yes"; 
-            $this->title              = "Paqueterìa TMH"; 
+            $this->title              = "TMH Express"; 
 
             $this->init();
         }

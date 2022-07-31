@@ -1,0 +1,32 @@
+array (
+  'origin' => 
+  array (
+    'address' => 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX',
+    'latitude' => 19.402299677796147,
+    'longitude' => -99.183665659261,
+  ),
+  'destination' => 
+  array (
+    'address' => 'Calle 6 Oeste # 1C-35, Hotel del Norte, Lima, PE',
+    'latitude' => -12.0463731,
+    'longitude' => -77.042754,
+  ),
+  'contact' => 
+  array (
+    'number_identification' => '24953560',
+    'full_name' => 'Bozzolo, Juan ElCapo ',
+    'phone' => '644149161',
+    'email' => 'boctulus@gmail.com',
+  ),
+  'package' => 
+  array (
+    'dimensions' => 
+    array (
+      'volume' => 1000,
+      'weight' => '10',
+      'pieces' => 5,
+    ),
+    'containt' => 'Prueba',
+    'type_product' => 'Documentos',
+  ),
+)

@@ -17,7 +17,7 @@ if (!defined('TMH_SHIPPING_METHOD_LABEL')){
 return [
     'shipping_cost'     => 100,  // valor arbitrario que deberia ser editable desde el Admin Panel
     'shipping_calc_tax' => 'per_order',   // posibilidades: per_order | per_item
-
+    'order_status_trigger' => 'completed',
 
     'namespace' => 'boctulus\WooTMHExpress',
 

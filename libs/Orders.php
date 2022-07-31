@@ -7,7 +7,7 @@
 namespace boctulus\WooTMHExpress\libs;
 
 use boctulus\WooTMHExpress\libs\Strings;
-use boctulus\WooTMHExpress\libs\Debug;
+use boctulus\WooTMHExpress\libs\Users;
 use boctulus\WooTMHExpress\libs\Products;
 
 /*
@@ -94,10 +94,82 @@ class Orders
         return $order;
     }
 
-    static function setOrderStatus($order, $status){
-        if (!empty($status)){
-            $order->update_status($status);
+    /*
+        Create a bunch of random orders
+    */
+    static function createRandom(int $qty_orders = 10, Array $product_ids = null, Array $user_ids = null){
+        $order_ids = [];
+
+        for ($i=0; $i< $qty_orders; $i++){
+            if (empty($product_ids)){    
+                $product_ids = Products::getRandomProductIds(rand(1,4));
+            }
+
+            $products = [];
+            foreach ($product_ids as $pid){
+                $products[] = [
+                    'pid' => $pid,
+                    'qty' => rand(1,5)
+                ];
+            }
+
+            if (empty($user_ids)){
+                $user_ids = Users::getUserIDList();
+            }
+
+            $user_id = $user_ids[array_rand($user_ids,1)];
+
+            $order = Orders::createOrder($products, null, null, [
+                '_customer_user' => $user_id,
+            ]);
+        
+            $order_ids[] = $order->get_id();
         }
+
+        return $order_ids;
+    }
+
+    static function createRandomByRoles(int $qty_orders = 10, Array $user_roles = ['customer']){
+        $order_ids = [];
+
+        $user_ids = Users::getUsersByRole($user_roles);       
+
+        for ($i=0; $i< $qty_orders; $i++){
+            $pids = Products::getRandomProductIds(rand(1,4));
+        
+            $products = [];
+            foreach ($pids as $pid){
+                $products[] = [
+                    'pid' => $pid,
+                    'qty' => rand(1,5)
+                ];
+            }
+
+            $user_id = $user_ids[array_rand($user_ids,1)];
+        
+            $order = Orders::createOrder($products, null, null, [
+                '_customer_user' => $user_id,
+            ]);
+        
+            $order_ids[] = $order->get_id();
+        }
+
+        return $order_ids;
+    }
+
+    static function setOrderStatus($order, $new_status, $note = null){
+        if (!empty($new_status)){
+            $order->update_status($new_status, $note);
+        }
+    }
+
+    static function setLastOrderStatus($status){
+        static::setOrderStatus(static::getLastOrder(), $status);
+    }
+
+    // setea status pero ademas agrega nota
+    static function addNote($order, string $new_status, string $note){
+        $order->update_status($new_status, $note);
     }
 
     static function setCustomerId($order, $user_id){
@@ -141,11 +213,12 @@ class Orders
     }
 
     /*
-        https://github.com/woocommerce/woocommerce/wiki/wc_get_orders-and-WC_Order_Query
+        Utilizar para obtener la cantidad de unidades vendidas a precio Plus de cierto producto 
     */
     static function getRecentOrders($days = 30, $user_id = null){
         $args = array(            
             'date_created' => '>' . ( time() - (DAY_IN_SECONDS * $days)),
+            'limit' => '-1'
         );
 
         if ($user_id !== null){
@@ -174,6 +247,16 @@ class Orders
             'currency' => $order_currency,
             'payment_method' => $order_payment_method,
             'payment_method_title' => $order_payment_method_title
+        ];
+    }
+
+    static function getShippingCosts(\Automattic\WooCommerce\Admin\Overrides\Order $order){
+        $shipping_total = $order->get_shipping_total();
+        $shipping_tax   = $order->get_shipping_tax();
+
+        return [
+            'total' => $shipping_total,
+            'tax'   => $shipping_tax
         ];
     }
 
@@ -262,6 +345,8 @@ class Orders
 
     /*
         Recibe instancia de WC_Order_Item_Product y devuelve array
+
+        https://stackoverflow.com/a/45706318/980631
     */
     static function orderItemToArray($item) {
         if ($item === null){
@@ -275,6 +360,12 @@ class Orders
 
         //Get the product ID
         $product_id   = $item->get_product_id();
+
+        if (empty($product_id)){
+            $order_id = $item->get_order_id();
+
+            throw new \Exception("Inesperado. Esta vacio product_id para un producto en order_id = '$order_id'");
+        }
 
         //Get the variation ID
         $variation_id = $item->get_variation_id();
@@ -332,6 +423,9 @@ class Orders
         ];
     }
 
+    /*
+        Atajo para obtener items a partie del objeto de la orden
+    */
     static function getOrderItemArray(object $order){
         $order_items = Orders::getOrderItems($order);
 
@@ -343,5 +437,5 @@ class Orders
 
         return $items;
     }
-
+    
 }

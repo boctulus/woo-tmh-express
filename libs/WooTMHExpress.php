@@ -55,10 +55,14 @@ class WooTMHExpress
     */
     static function registrar($data, $endpoint)
     {
+        Files::localDump($data, 'req.txt');
+
         $response = static::getClient($endpoint)
         ->setBody($data)
         ->post()
         ->getResponse();
+
+        Files::localDump($response, 'res.txt');
 
         return $response;
     }

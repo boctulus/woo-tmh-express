@@ -1,0 +1,21 @@
+array (
+  0 => 'Calle 6 Oeste # 1C-35, Hotel del Norte, Lima, PE',
+  1 => 
+  array (
+    'number_identification' => '24953560',
+    'full_name' => 'Bozzolo, Juan ElCapo ',
+    'phone' => '644149161',
+    'email' => 'boctulus@gmail.com',
+  ),
+  2 => 
+  array (
+    'dimensions' => 
+    array (
+      'volume' => 1000,
+      'weight' => '10',
+      'pieces' => 5,
+    ),
+    'containt' => 'Prueba',
+    'type_product' => 'Documentos',
+  ),
+)
