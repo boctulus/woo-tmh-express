@@ -72,7 +72,7 @@ function custom_shop_order_column($columns)
         if( $key ==  'order_status' ){
             // Inserting after "Status" column
            
-			#$reordered_columns['gestionar-envio'] = __( 'Gestionar envio','theme_domain');
+			$reordered_columns['gestionar-envio'] = __( 'Gestionar envio','theme_domain');
             $reordered_columns['download-invoice-pdf'] = __( 'Descargar PDF','theme_domain');
         }
     }
@@ -113,18 +113,17 @@ function custom_orders_list_column_content( $column, $order_id )
 			// $output = "<a href='$pdf_url' alt='pdf invoice $comprobante' target='_blank' id='$column-$order_id'>$anchor</a>";
 
 		break;
-		// case 'gestionar-envio':
-
+		case 'gestionar-envio':
+			$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
+			$output = "<button id='$column-$order_id' onclick='reintentarRegistro(event, $order_id);' title='$title'>Re-intentar</button>";
 			
-		// 	$output = "<button id='$column-$order_id' onclick='gestionarEnvio(event, $order_id);'>Enviar</button>";
-			
-		// 	$order = Orders::getOrderById($order_id);
+			// $order = Orders::getOrderById($order_id);
 
-		// 	dd(
-		// 		Orders::getOrderItemArray($order), 'ITEMS'
-		// 	);
+			// dd(
+			// 	Orders::getOrderItemArray($order), 'ITEMS'
+			// );
 		
-		// break;
+		break;
     }
 
 	echo $output;

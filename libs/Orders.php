@@ -260,6 +260,77 @@ class Orders
         ];
     }
 
+    static function getCustomerNotes(\Automattic\WooCommerce\Admin\Overrides\Order $order){
+        return $order->get_customer_order_notes();
+    }
+
+    /*
+        https://stackoverflow.com/a/43464103/980631
+    */
+    static function getOrderNotes($order, $author = null){
+        if (is_numeric($order)){
+            $order_id = $order;
+        } else {
+            $order_id = Orders::getLastOrderId();
+        }
+
+        $and_author = ($author !== null) ? "AND `comment_author` = '$author'" : '';
+        
+        global $wpdb;
+    
+        $table_perfixed = $wpdb->prefix . 'comments';
+
+        $sql = "
+            SELECT *
+            FROM $table_perfixed
+            WHERE  `comment_post_ID` = $order_id
+            AND  `comment_type` LIKE  'order_note' 
+            $and_author
+        ";
+
+        $results = $wpdb->get_results($sql);
+    
+        foreach($results as $note){
+            $order_note[]  = array(
+                'note_id'      => $note->comment_ID,
+                'note_date'    => $note->comment_date,
+                'note_author'  => $note->comment_author,
+                'note_content' => $note->comment_content,
+            );
+        }
+
+        return $order_note;
+    }
+
+    static function getLastOrderNoteMessage($order, $author = null){
+        if (is_numeric($order)){
+            $order_id = $order;
+        } else {
+            $order_id = Orders::getLastOrderId();
+        }
+
+        $and_author = ($author !== null) ? "AND `comment_author` = '$author'" : '';
+        
+        global $wpdb;
+    
+        $table_perfixed = $wpdb->prefix . 'comments';
+
+        $sql = "
+            SELECT *
+            FROM $table_perfixed
+            WHERE  `comment_post_ID` = $order_id
+            AND  `comment_type` LIKE  'order_note' 
+            $and_author
+            ORDER BY `comment_date` DESC
+            LIMIT 1
+        ";
+        
+        // selecciono 'comment_content' (posicion 8)
+        $val = $wpdb->get_var($sql, 8);
+
+        return $val;
+    }
+
     /*
         https://www.hardworkingnerd.com/woocommerce-how-to-get-a-customer-details-from-an-order/
     */
@@ -341,6 +412,19 @@ class Orders
             'shipping' => $shipping_display_data
         ];
 
+    }
+
+    static function orderItemId($item) {
+        if ($item === null){
+            throw new \InvalidArgumentException("Se espera objeto de tipo WC_Order_Item_Product. Recibido NULL");
+        }
+
+        if (!is_object($item)){
+            throw new \InvalidArgumentException("Se espera objeto de tipo WC_Order_Item_Product");
+        }
+
+        //Get the product ID
+        return $item->get_product_id();
     }
 
     /*

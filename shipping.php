@@ -1,6 +1,7 @@
 <?php
 
 use boctulus\WooTMHExpress\libs\WooTMHExpress;
+use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Files;
 
 // https://woocommerce.com/document/shipping-method-api/
@@ -40,10 +41,10 @@ function after_place_order($order_id, $status_from, $status_to)
         $package = [];
         foreach ($order->get_items() as $item_key => $item )
         {
-            Files::localDump($item, 'ITEMS.txt');
+            //Files::localDump($item, 'ITEMS.txt');
 
             $item_id     = $item->get_id();
-            $product_id  = $item->get_product_id(); 
+            $product_id  = Orders::orderItemId($order); 
             
             $meta = get_post_meta($product_id);
             
@@ -127,13 +128,16 @@ function after_place_order($order_id, $status_from, $status_to)
         try {
             $recoleccion_res = WooTMHExpress::registrarEnvio($data['dest_address'], $data['customer'], $data['package']);
 
-            Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
-            Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
+            $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}";
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
+            return;
 
+            //Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
+            //Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $e->getMessage());
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
             return;
         }
                 
@@ -141,12 +145,12 @@ function after_place_order($order_id, $status_from, $status_to)
         
         if (empty($recoleccion_res)){	
             //debug(json_encode($data, JSON_PRETTY_PRINT)); exit; ///				
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r001B');
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r002B');
             return; //
         }
         
         if (!isset($recoleccion['data']['guide'])){
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r002');
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003');
             return; //
         }	
         

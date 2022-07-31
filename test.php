@@ -30,11 +30,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 $cfg = \boctulus\WooTMHExpress\helpers\config();
 
 
-$order_id = Orders::getLastOrderId();
+$order = Orders::getLastOrder();
 
 dd(
-	WooTMHExpress::get_id_num_from_order($order_id)
-, "ID NUMBER for order_id = $order_id");
+	Orders::getLastOrderNoteMessage($order, 'WooCommerce')
+);
+
+
+// $order_id = Orders::getLastOrderId();
+//
+// dd(
+// 	WooTMHExpress::get_id_num_from_order($order_id)
+// , "ID NUMBER for order_id = $order_id");
 
 
 // dd(
