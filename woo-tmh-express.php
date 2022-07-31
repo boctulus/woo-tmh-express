@@ -26,5 +26,6 @@ if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 
 
 include_once 'tmh_main.php';
+include_once 'shipping.php';
 
 

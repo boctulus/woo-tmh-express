@@ -5,7 +5,20 @@
     By boctulus
 */
 
+if (!defined('TMH_SHIPPING_METHOD_LABEL')){
+    define('TMH_SERVER_ERROR_MSG', 'Falla en el servidor, re-intente más tarde por favor. ');
+    define('TMH_TODO_OK', 'Procesado exitosamente por TMH');
+    define('TMH_SHIPPING_METHOD_LABEL', "TMH");  // debería ser el nombre de la transportadora *
+    define('TMH_STATUS_IF_ERROR', 'processing');
+    define('TMH_NO_DIM', "Hay productos sin dimensiones");
+    define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
+}
+
 return [
+    'shipping_cost'     => 100,  // valor arbitrario que deberia ser editable desde el Admin Panel
+    'shipping_calc_tax' => 'per_order',   // posibilidades: per_order | per_item
+
+
     'namespace' => 'boctulus\WooTMHExpress',
 
     /*
