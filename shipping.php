@@ -113,27 +113,30 @@ function after_place_order($order_id, $status_from, $status_to)
         */
             
         $data = [
-                    "dest_address" => "$shipping_address_1, $shipping_address_2, $shipping_city, $shipping_country",
-                    "customer" => [
-                        "number_identification" => WooTMHExpress::get_id_num_from_order($order_id),
-                        "full_name" => "$shipping_last_name, $shipping_first_name ",
-                        "phone"     => $billing_phone,
-                        "email"     => $billing_email,
-                    ],
-                    "package"  => $package,
-                    "notes"    => $shipping_note
+            "dest_address" => "$shipping_address_1, $shipping_address_2, $shipping_city, $shipping_country",
+            "customer" => [
+                "number_identification" => WooTMHExpress::get_id_num_from_order($order_id),
+                "full_name" => "$shipping_last_name, $shipping_first_name ",
+                "phone"     => $billing_phone,
+                "email"     => $billing_email,
+            ],
+            "package"  => $package,
+            "notes"    => $shipping_note
         ];		
         
         
         try {
             $recoleccion_res = WooTMHExpress::registrarEnvio($data['dest_address'], $data['customer'], $data['package']);
 
-            $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}";
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
-            return;
-
             //Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
             //Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
+
+            if ($recoleccion_res['http_code'] != 200){
+                $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}";
+                $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
+
+                return;
+            }
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
@@ -212,9 +215,9 @@ function tmh_shipping_method_init()
                 return false; ////////////////////////
             }
 
-            Files::dd(
-                $zip_code, 'ZIP CODE'    
-            ); ////////////////////////////////
+            // Files::dd(
+            //     $zip_code, 'ZIP CODE'    
+            // ); ////////////////////////////////
 
             $rate = array(
                 'label'    => TMH_SHIPPING_METHOD_LABEL,

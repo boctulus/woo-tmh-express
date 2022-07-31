@@ -1,10 +1,26 @@
 TODO
 ----
 
-Investigar que pasa con este producto que no permite cuando esta solo el metodo de envio
+- Enlace a PDF en caso de que hubiera sido exitoso
+
+- Cola a fin de poder re-intentar en caso de fallo? QUIZAS NO. Simplemente si falla... no dejar que avance de estado por ejemplo a "procesando".
+
+Idealmente el plugin debe pasar de "processing" a "completed" cuando se pudo comunicar con TMH en caso de que haya sido el metodo de envio. 
+
+Y si fue con otro metodo != 'TMH' ???? 
+
+- Admin Panel con opciones basicas como:
+
+    shipping_cost
+    order_status_trigger
+    token ?
+
+- Investigar que pasa con este producto que no permite cuando esta solo el metodo de envio
 
 http://woo1.lan/producto/belgium-praline-chocolate-200g/
 
 Y este SI:
 
 http://woo1.lan/producto/algabo-jalq-a-b-x300-2/
+
+Exportarlos a fin de poder comparar bien !!!!!!!!!!!!!!!
