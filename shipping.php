@@ -116,9 +116,9 @@ function after_place_order($order_id, $status_from, $status_to)
                     "dest_address" => "$shipping_address_1, $shipping_address_2, $shipping_city, $shipping_country",
                     "customer" => [
                         "number_identification" => WooTMHExpress::get_id_num_from_order($order_id),
-                        "full_name"   => "$shipping_last_name, $shipping_first_name ",
-                        "phone" => $billing_phone,
-                        "email"    => $billing_email,
+                        "full_name" => "$shipping_last_name, $shipping_first_name ",
+                        "phone"     => $billing_phone,
+                        "email"     => $billing_email,
                     ],
                     "package"  => $package,
                     "notes"    => $shipping_note
@@ -153,7 +153,6 @@ function after_place_order($order_id, $status_from, $status_to)
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003');
             return; //
         }	
-        
         
         $order->update_status($config['order_status_trigger'], $shipping_note == null ? TMH_TODO_OK : $shipping_note);        
     }	
@@ -207,6 +206,16 @@ function tmh_shipping_method_init()
         public function calculate_shipping( $package = array()) {
             $config = \boctulus\WooTMHExpress\helpers\config();
 
+            $zip_code = $package[ 'destination' ][ 'postcode' ];
+
+            if (!in_array($zip_code, WooTMHExpress::getPostalCodes())){
+                return false; ////////////////////////
+            }
+
+            Files::dd(
+                $zip_code, 'ZIP CODE'    
+            ); ////////////////////////////////
+
             $rate = array(
                 'label'    => TMH_SHIPPING_METHOD_LABEL,
                 'cost'     => $config['shipping_cost'],
@@ -216,6 +225,8 @@ function tmh_shipping_method_init()
             // Register the rate
             $this->add_rate( $rate );
         }
+
+
     } // end class
 }
 

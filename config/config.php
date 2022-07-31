@@ -18,6 +18,7 @@ return [
     'shipping_cost'     => 100,  // valor arbitrario que deberia ser editable desde el Admin Panel
     'shipping_calc_tax' => 'per_order',   // posibilidades: per_order | per_item
     'order_status_trigger' => 'completed',
+    'allowed_zip_codes_expiration_time' => 3600 * 24,
 
     'namespace' => 'boctulus\WooTMHExpress',
 

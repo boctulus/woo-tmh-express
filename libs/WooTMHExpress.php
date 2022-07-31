@@ -55,14 +55,14 @@ class WooTMHExpress
     */
     static function registrar($data, $endpoint)
     {
-        Files::localDump($data, 'req.txt');
+        //Files::localDump($data, 'req.txt');
 
         $response = static::getClient($endpoint)
         ->setBody($data)
         ->post()
         ->getResponse();
 
-        Files::localDump($response, 'res.txt');
+        //Files::localDump($response, 'res.txt');
 
         return $response;
     }
@@ -71,7 +71,7 @@ class WooTMHExpress
     {
         $response = static::getClient($endpoint)
         ->get()
-        //->getResponse()
+        ->getResponse()
         ;
 
         return $response;
@@ -137,6 +137,36 @@ class WooTMHExpress
             'contact' => $customer_data,
             'package' => $package_data,
         ],$cfg['endpoints']['create_order']);
+    }
+
+    static function getPostalCodes(){
+        $zip_codes = get_transient('tmh_allowed_zip_codes');
+
+        if (!empty($zip_codes)){         
+            return $zip_codes;
+        }
+
+        $config = \boctulus\WooTMHExpress\helpers\config();
+
+        $res = static::get('codePostal');
+
+        if ($res['http_code'] != 200){
+            if (!empty($res['errors'])){
+                Files::localLogger("Error al obtener codigos postales via endpoint");
+            }
+
+            return false;
+        }
+
+        if (empty($res['data'])){
+            Files::localLogger("No se encontraron codigos postales via endpoint");
+            return false;
+        }
+
+        $zip_codes = array_column($res['data'], 'code'); 
+        set_transient('tmh_allowed_zip_codes', $zip_codes, $config['allowed_zip_codes_expiration_time']);
+
+        return $zip_codes;
     }
 
 }

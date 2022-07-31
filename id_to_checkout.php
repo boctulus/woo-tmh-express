@@ -11,8 +11,8 @@
 	return;
 }
 
-// if ( ! is_cart() && ! is_checkout()  ) {
-// 		return;
+// if (is_checkout()) {
+// 	return;
 // }
 
 
@@ -26,7 +26,12 @@ function add_id_num_field($checkout)
 {
     $config = \boctulus\WooTMHExpress\helpers\config();
 
-	$old_val = $checkout->get_value( 'id_num' );
+	if (session_id() == ''){
+		session_start();
+	}
+
+	//$old_val = $checkout->get_value( 'id_num' );
+	$old_val = isset($_SESSION['checkout_id_num_field']) ? $_SESSION['checkout_id_num_field'] : '';
 
     echo '<div id="id_num" placeholder="'. $config['input_placeholder'] .'">';
 
@@ -39,7 +44,7 @@ function add_id_num_field($checkout)
         'label'         => __('ID'),
         'placeholder'   => __($config['input_placeholder']),
 		'required'		=> $config['input_required']
-        ), $checkout->get_value( 'id_num' ));
+        ), $old_val);
 	}
 	
     echo '</div>';
@@ -68,8 +73,16 @@ function id_process() {
     $config = \boctulus\WooTMHExpress\helpers\config();
 
     // Check if set, if its not set add an error.
-    if ($config['input_required'] && !$_POST['id_num'] )
-        wc_add_notice( __($config['text_input_required']), 'error' );
+    if ($config['input_required'] && !$_POST['id_num'] ){
+		wc_add_notice( __($config['text_input_required']), 'error' );
+		return;
+	}
+
+	if (session_id() == ''){
+		session_start();
+	}
+
+	$_SESSION['checkout_id_num_field'] = $_POST['id_num'];
 }
 
 
@@ -79,10 +92,10 @@ function id_process() {
  * Update the order meta with field value
  */
 
- add_action( 'woocommerce_checkout_update_order_meta', 'id_num_update_order_meta' );
+add_action( 'woocommerce_checkout_update_order_meta', 'id_num_update_order_meta' );
 
-function id_num_update_order_meta( $order_id ) {
-    if ( ! empty( $_POST['id_num'] ) ) {
+function id_num_update_order_meta( $order_id ) {	
+    if (isset($_POST['id_num']) && !empty( $_POST['id_num'] ) ) {
         update_post_meta( $order_id, 'id_num', sanitize_text_field( $_POST['id_num'] ) );
-    }
+    } 
 }

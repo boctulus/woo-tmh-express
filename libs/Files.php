@@ -190,6 +190,13 @@ class Files
 		}		
 	}
 
+	// NEW!
+	static function dd($value, $title, $filename = 'dump.txt', $append = false){
+		static::localDump([
+			$title => $value
+		], $filename, $append);
+	}
+
 	static function get_rel_path(){
 		$ini = strpos(__DIR__, '/wp-content/');
 		$rel_path = substr(__DIR__, $ini);
