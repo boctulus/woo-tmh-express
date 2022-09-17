@@ -49,10 +49,10 @@ function after_place_order($order_id, $status_from, $status_to)
             
             $meta = get_post_meta($product_id);
             
-            $l = $meta['_length'][0] ?? "0";
-            $w = $meta['_width'][0]  ?? "0";
-            $h = $meta['_height'][0] ?? "0";
-            $W = $meta['_weight'][0] ?? "0";
+            $l = $meta['_length'][0] ?? 0;  
+            $w = $meta['_width'][0]  ?? 0;
+            $h = $meta['_height'][0] ?? 0;
+            $W = $meta['_weight'][0] ?? 0;
             $Q = $item->get_quantity();
              
             $package['dimensions'] = [
@@ -153,13 +153,13 @@ function after_place_order($order_id, $status_from, $status_to)
             return; //
         }
         
-        if (!isset($recoleccion['data']['guide'])){
+        if (!isset($recoleccion_res['data']['order_id'])){
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
             return; //
         }	
 
-        $tracking      = $recoleccion['data']['guide'];
-        $msg           = $recoleccion['data']['message'];
+        $tracking      = $recoleccion_res['data']['guide'];
+        $msg           = $recoleccion_res['data']['message'];
         $shipping_note = "Guía: #{$tracking} - $msg";
 
         Files::localLogger("$order_id - $shipping_note"); ////

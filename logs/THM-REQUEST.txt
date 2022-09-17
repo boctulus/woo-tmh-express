@@ -13,7 +13,7 @@ array (
     array (
       'volume' => 25,
       'weight' => '2',
-      'pieces' => 1,
+      'pieces' => 3,
     ),
     'containt' => 'Prueba',
     'type_product' => 'Documentos',
