@@ -1,32 +1,36 @@
 array (
-  'origin' => 
+  'url' => 'createOrder',
+  'body' => 
   array (
-    'address' => 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX',
-    'latitude' => 19.402299677796147,
-    'longitude' => -99.183665659261,
-  ),
-  'destination' => 
-  array (
-    'address' => 'Calle 6 Oeste # 1C-35, Hotel del Norte, Lima, PE',
-    'latitude' => -12.0463731,
-    'longitude' => -77.042754,
-  ),
-  'contact' => 
-  array (
-    'number_identification' => '24953560',
-    'full_name' => 'Bozzolo, Juan ElCapo ',
-    'phone' => '644149161',
-    'email' => 'boctulus@gmail.com',
-  ),
-  'package' => 
-  array (
-    'dimensions' => 
+    'origin' => 
     array (
-      'volume' => 1000,
-      'weight' => '10',
-      'pieces' => 5,
+      'address' => 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX',
+      'latitude' => 19.402299677796147,
+      'longitude' => -99.183665659261,
     ),
-    'containt' => 'Prueba',
-    'type_product' => 'Documentos',
+    'destination' => 
+    array (
+      'address' => 'calle 5 de Mayo,  Alguna, MX',
+      'latitude' => 19.3476834,
+      'longitude' => -99.0246822,
+    ),
+    'contact' => 
+    array (
+      'number_identification' => '1344555',
+      'full_name' => 'Romo, Juan Carlos ',
+      'phone' => '4040404',
+      'email' => 'boctulus+1002@gmail.com',
+    ),
+    'package' => 
+    array (
+      'dimensions' => 
+      array (
+        'volume' => 25,
+        'weight' => '2',
+        'pieces' => 1,
+      ),
+      'containt' => 'Prueba',
+      'type_product' => 'Documentos',
+    ),
   ),
 )

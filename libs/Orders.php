@@ -414,7 +414,7 @@ class Orders
 
     }
 
-    static function orderItemId($item) {
+    static function orderItemId(\WC_Order_Item_Product $item) {
         if ($item === null){
             throw new \InvalidArgumentException("Se espera objeto de tipo WC_Order_Item_Product. Recibido NULL");
         }

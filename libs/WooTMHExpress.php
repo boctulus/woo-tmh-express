@@ -12,6 +12,13 @@ use boctulus\WooTMHExpress\libs\Maps;
 
 class WooTMHExpress
 {  
+    // url para ver el PDF
+    static function get_pdf_invoice_url($order_id){
+        $config = \boctulus\WooTMHExpress\helpers\config();
+
+        return "{$config['url_invoice_pdfs']}/$order_id";
+    }
+
     static function get_id_num_from_order($order_id){
         $meta_key = 'id_num'; 
         return get_post_meta($order_id, $meta_key, true);
@@ -55,14 +62,18 @@ class WooTMHExpress
     */
     static function registrar($data, $endpoint)
     {
-        //Files::localDump($data, 'req.txt');
+        Files::localDump(
+            [
+                'url' => $endpoint,
+                'body' => $data
+            ], 'req.txt'); /////////////
 
         $response = static::getClient($endpoint)
         ->setBody($data)
         ->post()
         ->getResponse();
 
-        //Files::localDump($response, 'res.txt');
+        Files::localDump($response, 'res.txt');  ///////////
 
         return $response;
     }
@@ -111,6 +122,8 @@ class WooTMHExpress
 
         $geo_ay = Maps::getCoord($dest_address);
 
+        // podria fallar si la direccion tiene un problema
+
         return static::registrar([
             'origin' =>
             array (
@@ -126,8 +139,8 @@ class WooTMHExpress
             'destination' =>
             array (
                 'address'   => $dest_address,
-                'latitude'  => $geo_ay['lat'],
-                'longitude' => $geo_ay['lon'],
+                'latitude'  => $geo_ay['lat'] ?? "0",
+                'longitude' => $geo_ay['lon'] ?? "0",
             ),
     
             /*
@@ -149,11 +162,15 @@ class WooTMHExpress
         $config = \boctulus\WooTMHExpress\helpers\config();
 
         $res = static::get('codePostal');
-
+        
         if ($res['http_code'] != 200){
+            $error = "Error al obtener codigos postales via endpoint. Code: {$res['http_code']}.";
+
             if (!empty($res['errors'])){
-                Files::localLogger("Error al obtener codigos postales via endpoint");
+                $error .= $res['errors'];
             }
+
+            Files::localLogger($error);
 
             return false;
         }
@@ -166,6 +183,7 @@ class WooTMHExpress
         $zip_codes = array_column($res['data'], 'code'); 
         set_transient('tmh_allowed_zip_codes', $zip_codes, $config['allowed_zip_codes_expiration_time']);
 
+        
         return $zip_codes;
     }
 

@@ -30,6 +30,22 @@ class Products
 
         return !empty($p);
     }
+
+    static function isExternal($product){
+        $product = static::getProduct($product);
+
+        if ($product instanceof \WC_Product_External){
+            // extra-check
+
+            if (empty($product->get_product_url())){
+                throw new \Exception("External producto without url");
+            }
+
+            return true;
+        } 
+
+        return false;
+    }
         
     static function getProduct($product){
         $p =  is_object($product) ? $product : \wc_get_product($product);
@@ -120,12 +136,6 @@ class Products
     }
 
     static function getProductIdBySKU($sku){
-        $pid = wc_get_product_id_by_sku($sku);
-
-        if (!empty($pid)){
-            return $pid;
-        }
-
         $result_ay = static::getByMeta('SKU', $sku);
 
         if (empty($result_ay)){
@@ -155,6 +165,26 @@ class Products
     // alias
     static function updateStatus($pid, $status){
         return static::setStatus($pid, $status);
+    }
+
+    static function setProductStatus($product, $status){
+        $product = static::getProduct($product);
+
+        // Status ('publish', 'pending', 'draft' or 'trash')
+        if (in_array($status, ['publish', 'pending', 'draft', 'trash'])){
+            $product->set_status($status);
+            $product->save();
+        } else {
+            throw new \InvalidArgumentException("Estado de producto '$status' invalido.");
+        }
+    }
+
+    static function setAsDraft($pid){
+        static::setProductStatus($pid, 'draft');
+    }
+
+    static function setAsPublish($pid){
+        static::setProductStatus($pid, 'publish');
     }
 
     // 'publish'
@@ -697,22 +727,16 @@ class Products
     }
 
 
-    static function updateProductBy($by = 'pid', $args, $update_images_even_it_has_featured_image = true )
+    static function updateProductBySku( $args, $update_images_even_it_has_featured_image = true )
     {
-        if ($by === 'pid'){
-            $pid = $args['id'];
-        } else {
-            // by sku
+        if (!isset($args['sku']) || empty($args['sku'])){
+            throw new \InvalidArgumentException("SKU es requerido");
+        }
 
-            if (!isset($args['sku']) || empty($args['sku'])){
-                throw new \InvalidArgumentException("SKU es requerido");
-            }
-    
-            $pid = static::getProductIdBySKU($args['sku']);
-    
-            if (empty($pid)){
-                throw new \InvalidArgumentException("SKU {$args['sku']} no encontrado");
-            }
+        $pid = static::getProductIdBySKU($args['sku']);
+
+        if (empty($pid)){
+            throw new \InvalidArgumentException("SKU {$args['sku']} no encontrado");
         }
 
         $product = wc_get_product($pid);
@@ -947,10 +971,6 @@ class Products
                 }      
             }  
         }
-    }
-
-    static function updateProductBySku($args, $update_images_even_it_has_featured_image = true ){
-        return static::updateProductBy('sku', $args, $update_images_even_it_has_featured_image);
     }
 
     /*

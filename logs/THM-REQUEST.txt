@@ -1,19 +1,19 @@
 array (
-  0 => 'Calle 6 Oeste # 1C-35, Hotel del Norte, Lima, PE',
+  0 => 'calle 5 de Mayo, , Alguna, MX',
   1 => 
   array (
-    'number_identification' => '24953560',
-    'full_name' => 'Bozzolo, Juan ElCapo ',
-    'phone' => '644149161',
-    'email' => 'boctulus@gmail.com',
+    'number_identification' => '1344555',
+    'full_name' => 'Romo, Juan Carlos ',
+    'phone' => '4040404',
+    'email' => 'boctulus+1002@gmail.com',
   ),
   2 => 
   array (
     'dimensions' => 
     array (
-      'volume' => 1000,
-      'weight' => '10',
-      'pieces' => 5,
+      'volume' => 25,
+      'weight' => '2',
+      'pieces' => 1,
     ),
     'containt' => 'Prueba',
     'type_product' => 'Documentos',

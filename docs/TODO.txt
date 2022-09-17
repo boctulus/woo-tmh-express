@@ -3,6 +3,14 @@ TODO
 
 - Enlace a PDF en caso de que hubiera sido exitoso
 
+    https://tmhexpress.uc.r.appspot.com/print_guide/{guia}
+
+Ej:
+
+    https://tmhexpress.uc.r.appspot.com/print_guide/318832
+
+PD: el 3-8-2022 no funcionaba.
+
 - Cola a fin de poder re-intentar en caso de fallo? QUIZAS NO. Simplemente si falla... no dejar que avance de estado por ejemplo a "procesando".
 
 Idealmente el plugin debe pasar de "processing" a "completed" cuando se pudo comunicar con TMH en caso de que haya sido el metodo de envio. 

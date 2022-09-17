@@ -20,8 +20,7 @@ function after_place_order($order_id, $status_from, $status_to)
 {
     $config = \boctulus\WooTMHExpress\helpers\config();
 
-    //var_dump($order_id);
-    //var_dump ([$old_status, $new_status]);
+    Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
     if( $status_to == $config['order_status_trigger'] ) 
     {
@@ -33,6 +32,8 @@ function after_place_order($order_id, $status_from, $status_to)
             session_start();
         }
         
+        Files::dd(__LINE__ . ' - '. __FUNCTION__);
+
         if (isset($_SESSION['server_not_before']) && (time() < $_SESSION['server_not_before'])){
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
             return;
@@ -44,14 +45,14 @@ function after_place_order($order_id, $status_from, $status_to)
             //Files::localDump($item, 'ITEMS.txt');
 
             $item_id     = $item->get_id();
-            $product_id  = Orders::orderItemId($order); 
+            $product_id  = Orders::orderItemId($item); 
             
             $meta = get_post_meta($product_id);
             
-            $l = $meta['_length'][0] ?? null;
-            $w = $meta['_width'][0]  ?? null;
-            $h = $meta['_height'][0] ?? null;
-            $W = $meta['_weight'][0] ?? null;
+            $l = $meta['_length'][0] ?? "0";
+            $w = $meta['_width'][0]  ?? "0";
+            $h = $meta['_height'][0] ?? "0";
+            $W = $meta['_weight'][0] ?? "0";
             $Q = $item->get_quantity();
              
             $package['dimensions'] = [
@@ -59,11 +60,7 @@ function after_place_order($order_id, $status_from, $status_to)
                 'weight' => $W,
                 'pieces' => $Q
             ];
-            
-            //debug([$l, $w, $h, $W], 'Dimmensions');
-            //debug($meta, "meta para prod id = $item_id");
         }
-
 
         /*
             Campos obligatorios (hardcodeados)
@@ -107,6 +104,7 @@ function after_place_order($order_id, $status_from, $status_to)
         
         //debug($order, 'ORDER OBJECT');
     
+        Files::dd(__LINE__ . ' - '. __FUNCTION__);
                     
         /*
             Cotizacion
@@ -124,40 +122,49 @@ function after_place_order($order_id, $status_from, $status_to)
             "notes"    => $shipping_note
         ];		
         
-        
-        try {
-            $recoleccion_res = WooTMHExpress::registrarEnvio($data['dest_address'], $data['customer'], $data['package']);
+        #Files::dd(__LINE__ . ' - '. __FUNCTION__);  /// no llega hasta aca_______!>????
 
-            //Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
-            //Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
+        try {
+            $full_addr = $data['dest_address'];
+            $full_addr = str_replace(', ,', ', ', $full_addr);
+
+            $recoleccion_res = WooTMHExpress::registrarEnvio($full_addr, $data['customer'], $data['package']);
+
+            Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
+            Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
 
             if ($recoleccion_res['http_code'] != 200){
-                $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}";
+                $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}. ";
                 $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
 
                 return;
-            }
+            } 
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
             return;
         }
-                
-        //debug(json_encode($data, JSON_PRETTY_PRINT)); exit; ///
+
+        Files::dd(__LINE__ . ' - '. __FUNCTION__);
         
-        if (empty($recoleccion_res)){	
-            //debug(json_encode($data, JSON_PRETTY_PRINT)); exit; ///				
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r002B');
+        if (empty($recoleccion_res)){				
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
             return; //
         }
         
         if (!isset($recoleccion['data']['guide'])){
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003');
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
             return; //
         }	
+
+        $tracking      = $recoleccion['data']['guide'];
+        $msg           = $recoleccion['data']['message'];
+        $shipping_note = "Guía: #{$tracking} - $msg";
+
+        Files::localLogger("$order_id - $shipping_note"); ////
         
-        $order->update_status($config['order_status_trigger'], $shipping_note == null ? TMH_TODO_OK : $shipping_note);        
+        $order->update_status($config['order_status_trigger'], $shipping_note);        
     }	
 }
 
@@ -212,6 +219,7 @@ function tmh_shipping_method_init()
             $zip_code = $package[ 'destination' ][ 'postcode' ];
 
             if (!in_array($zip_code, WooTMHExpress::getPostalCodes())){
+                #Files::localLogger("El zip code '$zip_code' no es manejado por TMH");
                 return false; ////////////////////////
             }
 

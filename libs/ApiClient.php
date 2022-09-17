@@ -77,8 +77,13 @@ class ApiClient
         return $this->status;
     }
 
+    function getError(){
+        return $this->error;
+    }
+
+    // alias por retro-compatiblidad
     function getErrors(){
-        return $this->errors;
+        return $this->getError();
     }
 
     function getResponse(bool $decode = true, bool $as_array = true){        
@@ -91,7 +96,7 @@ class ApiClient
         $res = [
             'data' => $data,
             'http_code' => $this->status,
-            'errors' => $this->errors
+            'errors' => $this->error
         ];
 
         return $res;
@@ -154,7 +159,7 @@ class ApiClient
                 }
                 
                 $this->status   = $res['http_code'];
-                $this->errors   = $res['error'];
+                $this->error    = $res['error']; // deberia ser error y no errors
                 $this->response = $res['data'];
                 return;
             }
@@ -171,7 +176,7 @@ class ApiClient
         {   
             $res = Url::consume_api($url, $http_verb, $body, $headers, $options, false, $this->encode_body);
             $this->status   = $res['http_code'];
-            $this->errors   = $res['error'];
+            $this->error   = $res['error'];
             $this->response = $res['data'];
 
             /*
@@ -189,7 +194,7 @@ class ApiClient
                 NULL
             */
 
-            $ok = empty($this->errors);
+            $ok = empty($this->error);
             $retries++;
 
             //d($ok ? 'ok' : 'fail', 'INTENTOS: '. $retries);

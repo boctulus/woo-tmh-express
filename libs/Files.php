@@ -11,6 +11,12 @@ use boctulus\WooTMHExpress\libs\Debug;
 
 class Files
 {	
+	static protected $print_logs = false;
+
+	static function printLogs(bool $status = true){
+		static::$print_logs = $status;
+	}
+
 	/*
 		Resultado:
 
@@ -170,12 +176,16 @@ class Files
 		$dir  = $path = __DIR__ . '/../logs/';
 		$path = __DIR__ . '/../logs/'. $filename; 
 
-		Files::mkDir($dir); //
+		Files::mkDirOrFail($dir); //
 		
 		if (is_array($data) || is_object($data))
 			$data = json_encode($data);
 		
 		$data = date("Y-m-d H:i:s"). "\t" .$data;
+
+		if (static::$print_logs){
+			dd($data);
+		}
 
 		return file_put_contents($path, $data. "\n", FILE_APPEND);
 	}
@@ -191,7 +201,12 @@ class Files
 	}
 
 	// NEW!
-	static function dd($value, $title, $filename = 'dump.txt', $append = false){
+	static function dd($value, $title = null, $filename = 'dump.txt', $append = false){
+		if (empty($title)){
+			static::localDump($value, $filename, $append);
+			return;
+		}
+
 		static::localDump([
 			$title => $value
 		], $filename, $append);
