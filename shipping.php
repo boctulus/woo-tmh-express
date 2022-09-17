@@ -18,9 +18,26 @@ add_action( 'woocommerce_order_status_changed','after_place_order', 10, 3);
 
 function after_place_order($order_id, $status_from, $status_to)
 {
+    global $wpdb;
+
+    $order           = Orders::getOrderById($order_id);
+	$shipping_method = $order->get_shipping_method();
+
+	if ($shipping_method != TMH_SHIPPING_METHOD_LABEL){
+		return;
+	}
+
     $config = \boctulus\WooTMHExpress\helpers\config();
 
-    Files::dd(__LINE__ . ' - '. __FUNCTION__);
+    $sql   = "SELECT COUNT(*) as count FROM `{$wpdb->prefix}tmh_orders` WHERE `woo_order_id`=$order_id;";
+    $count = $wpdb->get_var($sql);
+    
+    if ($count == 0){
+        $sql = "INSERT INTO `{$wpdb->prefix}tmh_orders` (`woo_order_id`) VALUES ($order_id);";
+        $wpdb->query($sql);
+    }
+
+    # Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
     if( $status_to == $config['order_status_trigger'] ) 
     {
@@ -32,10 +49,17 @@ function after_place_order($order_id, $status_from, $status_to)
             session_start();
         }
         
-        Files::dd(__LINE__ . ' - '. __FUNCTION__);
+        # Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
         if (isset($_SESSION['server_not_before']) && (time() < $_SESSION['server_not_before'])){
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
+
+            $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+            SET try_count=try_count+1 
+            WHERE woo_order_id=$order_id;";
+
+            $wpdb->query($sql);
+
             return;
         }
             
@@ -70,8 +94,7 @@ function after_place_order($order_id, $status_from, $status_to)
         $package["type_product"] = "Documentos";
 
 
-        $timezone = date_default_timezone_get();
-        
+        $timezone = date_default_timezone_get();        
         
         // Get the Customer billing email
         $billing_email  = $order->get_billing_email();
@@ -104,7 +127,7 @@ function after_place_order($order_id, $status_from, $status_to)
         
         //debug($order, 'ORDER OBJECT');
     
-        Files::dd(__LINE__ . ' - '. __FUNCTION__);
+        # Files::dd(__LINE__ . ' - '. __FUNCTION__);
                     
         /*
             Cotizacion
@@ -130,12 +153,18 @@ function after_place_order($order_id, $status_from, $status_to)
 
             $recoleccion_res = WooTMHExpress::registrarEnvio($full_addr, $data['customer'], $data['package']);
 
-            Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
-            Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
+            #Files::localDump([$data['dest_address'], $data['customer'], $data['package']], 'THM-REQUEST.txt');
+            #Files::localDump($recoleccion_res, 'THM-RESPONSE.txt');
 
             if ($recoleccion_res['http_code'] != 200){
                 $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}. ";
                 $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
+
+                $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+                SET try_count=try_count+1 
+                WHERE woo_order_id=$order_id;";
+                
+                $wpdb->query($sql);
 
                 return;
             } 
@@ -143,13 +172,27 @@ function after_place_order($order_id, $status_from, $status_to)
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
+
+            $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+            SET try_count=try_count+1 
+            WHERE woo_order_id=$order_id;";
+            
+            $wpdb->query($sql);
+
             return;
         }
 
-        Files::dd(__LINE__ . ' - '. __FUNCTION__);
+        #Files::dd(__LINE__ . ' - '. __FUNCTION__);
         
         if (empty($recoleccion_res)){				
             $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
+
+            $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+            SET try_count=try_count+1 
+            WHERE woo_order_id=$order_id;";
+            
+            $wpdb->query($sql);
+
             return; //
         }
         
@@ -158,11 +201,32 @@ function after_place_order($order_id, $status_from, $status_to)
             return; //
         }	
 
-        $tracking      = $recoleccion_res['data']['guide'];
-        $msg           = $recoleccion_res['data']['message'];
+        $tracking      = $recoleccion_res['data']['guide']    ?? null;
+        $tmh_order_id  = $recoleccion_res['data']['order_id'] ?? null;
+        $msg           = $recoleccion_res['data']['message']  ?? null;
+
+        if (empty($tmh_order_id)){
+            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r004. Technical detail: respuesta sin numero de guia');
+
+            $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+            SET try_count=try_count+1 
+            WHERE woo_order_id=$order_id;";
+            
+            $wpdb->query($sql);
+
+            return; //
+        }
+
         $shipping_note = "Guía: #{$tracking} - $msg";
 
-        Files::localLogger("$order_id - $shipping_note"); ////
+        #Files::localLogger("$order_id - $shipping_note"); ////
+
+        $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
+        SET tmh_order_id=$tmh_order_id, tracking_num=$tracking 
+        WHERE woo_order_id=$order_id;";
+        
+        //var_dump($sql). "\r\n\r\n";
+        $wpdb->query($sql);
         
         $order->update_status($config['order_status_trigger'], $shipping_note);        
     }	

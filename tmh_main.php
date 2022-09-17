@@ -23,7 +23,7 @@ require_once __DIR__ . '/helpers/debug.php';
 require_once __DIR__ . '/helpers/cli.php';
 
 require_once __DIR__ . '/id_to_checkout.php'; // agrega metabox con campo de identificacion
-
+require_once __DIR__ . '/installer/tmh_orders.php';
 
 #if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	ini_set('display_errors', 1);
@@ -85,6 +85,13 @@ add_action( 'manage_shop_order_posts_custom_column' , 'boctulus\WooTMHExpress\cu
 function custom_orders_list_column_content( $column, $order_id )
 {
 	global $config;
+
+	$order           = Orders::getOrderById($order_id);
+	$shipping_method = $order->get_shipping_method();
+
+	if ($shipping_method != TMH_SHIPPING_METHOD_LABEL){
+		return;
+	}
 
 	// Default
 	$output = "<span id='$column-$order_id'></span>";
