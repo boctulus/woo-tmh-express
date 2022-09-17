@@ -43,7 +43,7 @@ return [
         'get_orders' => 'orders'
     ],
 
-    'url_invoice_pdfs'  => 'https://tmhexpress.uc.r.appspot.com/print_guide/',
+    'url_invoice_pdfs'  => 'https://tmhexpress.uc.r.appspot.com/print_guide',
 
     /*
         Definido para el cliente 

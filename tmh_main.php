@@ -16,6 +16,8 @@ use boctulus\WooTMHExpress\libs\Debug;
 use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Date;
 use boctulus\WooTMHExpress\libs\DB;
+use boctulus\WooTMHExpress\libs\WooTMHExpress;
+use ParagonIE\Sodium\Core\Curve25519\Ge\P2;
 
 require_once __DIR__ . '/helpers/config.php'; 
 require_once __DIR__ . '/helpers/autoloader.php'; // *
@@ -84,7 +86,7 @@ function custom_shop_order_column($columns)
 add_action( 'manage_shop_order_posts_custom_column' , 'boctulus\WooTMHExpress\custom_orders_list_column_content', 10, 2 );
 function custom_orders_list_column_content( $column, $order_id )
 {
-	global $config;
+	global $config, $wpdb;
 
 	$order           = Orders::getOrderById($order_id);
 	$shipping_method = $order->get_shipping_method();
@@ -93,37 +95,46 @@ function custom_orders_list_column_content( $column, $order_id )
 		return;
 	}
 
+	$sql   = "SELECT COUNT(*) as count FROM `{$wpdb->prefix}tmh_orders` WHERE `woo_order_id`=$order_id;";
+    $count = $wpdb->get_var($sql);
+
+	// Que la orden no este en la tabla tmh_orders a estas alturas seria raro pero en pruebas claro que puede suceder
+	// Esto resuelve inconcistencias
+	if ($count == 0){
+		return;
+	}
+
+	// Sino tmh_order_id esta vacio => es porque no se intento la comunicacion con TMH o esta fallo
+	// Si es que fallo => try_count >0
+
+	$sql  = "SELECT * FROM `{$wpdb->prefix}tmh_orders` WHERE `woo_order_id`=$order_id;";
+    $row  = $wpdb->get_row($sql, ARRAY_A);
+
+	$tmh_order_id = $row['tmh_order_id'];
+	$try_count    = $row['try_count'];
+	$tracking     = $row['tracking_num'];
+
+	$has_failed   = ($tmh_order_id == null) && ($try_count == 0);
+
+
 	// Default
 	$output = "<span id='$column-$order_id'></span>";
 
     switch($column)
     {
 		case 'download-invoice-pdf':		
-			// if (in_array($order_id, $fallidos)){
-			// 	break;
-			// }
-
-			// $ruc_cliente  = Sinergia::get_ruc_from_order($order_id);
-
-			// $tipo = empty($ruc_cliente) ? Sinergia::BOLETA : Sinergia::FACTURA;
-		
-			// $comprobante = DB::getComprobanteByOrderId($order_id, $tipo);
-
-			// // Esto ya ser'ia un Error
-			// if (empty($comprobante)){
-			// 	break;
-			// }
-
-			// $pdf_url = Sinergia::getPdfUrl($comprobante);   
-			// $anchor  = $comprobante;
-
-			// $output = "<a href='$pdf_url' alt='pdf invoice $comprobante' target='_blank' id='$column-$order_id'>$anchor</a>";
-
+			if ($tmh_order_id !== null){
+				$pdf_url = WooTMHExpress::get_pdf_invoice_url($tmh_order_id);
+				$anchor  = 'Recibo de TMH';
+				$output = "<a href=\"$pdf_url\" alt=\"pdf invoice for tracking '$tracking'\" target=\"_blank\" id=\"$column-$order_id\">$anchor</a>";
+			}
 		break;
 		case 'gestionar-envio':
-			$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
-			$output = "<button id='$column-$order_id' onclick='reintentarRegistro(event, $order_id);' title='$title'>Re-intentar</button>";
-			
+			if ($has_failed){
+				$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
+				$output = "<button id='$column-$order_id' onclick='reintentarRegistro(event, $order_id);' title='$title'>Re-intentar</button>";
+			}
+
 			// $order = Orders::getOrderById($order_id);
 
 			// dd(
