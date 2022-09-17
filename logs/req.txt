@@ -25,8 +25,8 @@ array (
     array (
       'dimensions' => 
       array (
-        'volume' => 0,
-        'weight' => 0,
+        'volume' => 250,
+        'weight' => 8.39,
         'pieces' => 5,
       ),
       'containt' => 'Prueba',

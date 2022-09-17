@@ -114,7 +114,7 @@ function custom_orders_list_column_content( $column, $order_id )
 	$try_count    = $row['try_count'];
 	$tracking     = $row['tracking_num'];
 
-	$has_failed   = ($tmh_order_id == null) && ($try_count == 0);
+	$has_failed   = ($tmh_order_id == null) && ($try_count > 0);
 
 
 	// Default
@@ -133,14 +133,7 @@ function custom_orders_list_column_content( $column, $order_id )
 			if ($has_failed){
 				$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
 				$output = "<button id='$column-$order_id' onclick='reintentarRegistro(event, $order_id);' title='$title'>Re-intentar</button>";
-			}
-
-			// $order = Orders::getOrderById($order_id);
-
-			// dd(
-			// 	Orders::getOrderItemArray($order), 'ITEMS'
-			// );
-		
+			}		
 		break;
     }
 

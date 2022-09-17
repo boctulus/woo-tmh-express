@@ -64,6 +64,11 @@ function after_place_order($order_id, $status_from, $status_to)
         }
             
         $package = [];
+        
+        $v_total = 0;
+        $w_total = 0;
+        $q_total = 0;
+
         foreach ($order->get_items() as $item_key => $item )
         {
             //Files::localDump($item, 'ITEMS.txt');
@@ -79,12 +84,17 @@ function after_place_order($order_id, $status_from, $status_to)
             $W = $meta['_weight'][0] ?? 0;
             $Q = $item->get_quantity();
              
-            $package['dimensions'] = [
-                'volume' => $l * $w * $h,
-                'weight' => $W,
-                'pieces' => $Q
-            ];
+
+            $v_total += $l * $w * $h;
+            $w_total += ($W * $Q);
+            $q_total += $Q;
         }
+
+        $package['dimensions'] = [
+            'volume' => $v_total,
+            'weight' => $w_total,
+            'pieces' => $q_total
+        ];
 
         /*
             Campos obligatorios (hardcodeados)
