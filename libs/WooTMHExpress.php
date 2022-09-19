@@ -215,7 +215,8 @@ class WooTMHExpress
         
         return [
             'tracking_num' => $tracking,
-            'tmh_order_id' => $tmh_order_id
+            'tmh_order_id' => $tmh_order_id,
+            'invoice_url'  => self::get_pdf_invoice_url($tmh_order_id)
         ];
     }
 

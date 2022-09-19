@@ -66,7 +66,8 @@ function process_order(WP_REST_Request $req)
                     'message' => "Orden ignorada. La orden '$order_id' ya fue procesada previamente",
                     'data' => [
                         "tracking_num" => $tracking,
-                        "tmh_order_id" => $tmh_order_id
+                        "tmh_order_id" => $tmh_order_id,
+                        "invoice_url"  => WooTMHExpress::get_pdf_invoice_url($tmh_order_id)
                     ]
                 ];
         
@@ -93,7 +94,11 @@ function process_order(WP_REST_Request $req)
         $res = [
             'code' => 200,
             'message' => "Orden '$order_id' fue procesada exitosamente",
-            'data' => $res
+            'data' => [
+                "tracking_num" => $res["tracking_num"],
+                "tmh_order_id" => $res["tmh_order_id"],
+                "invoice_url"  => $res["invoice_url"]
+            ]
         ];
 
         $res = new WP_REST_Response($res);

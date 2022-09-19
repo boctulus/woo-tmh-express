@@ -39,35 +39,6 @@ if (!defined('TMH_SHIPPING_METHOD_LABEL')){
 	define('TMH_SHIPPING_METHOD_LABEL', "TMH");  
 }
 
-
-if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):
-	?>
-	<script>
-		const BASE_URL = '<?= get_site_url() ?>';
-		const PLUGIN_URL = '<?= __DIR__ ?>';
-
-		// Revisar las siguientes funciones. Son necesarias?
-
-		function add_invoice_link(order_id, comprobante, pdf_url){
-			jQuery('#download-invoice-pdf-' + order_id).replaceWith('<a href="'+ pdf_url +'" target="_blank">'+ comprobante +'</a>')
-		}
-
-		function remove_button(order_id){
-			jQuery('#gestionar-envio-' + order_id).replaceWith('<span id="#gestionar-envio-' + order_id + '"></span>')
-		}
-
-		function disable_button(order_id){
-			jQuery('#gestionar-envio-' + order_id).prop("disabled",true)
-		}
-
-		function enable_button(order_id){
-			jQuery('#gestionar-envio-' + order_id).prop("disabled",false)
-		}
-		
-	</script>
-<?php
-endif;
-
 // ADDING 2 NEW COLUMNS WITH THEIR TITLES
 add_filter( 'manage_edit-shop_order_columns', 'boctulus\WooTMHExpress\custom_shop_order_column', 20 );
 function custom_shop_order_column($columns)
@@ -138,13 +109,101 @@ function custom_orders_list_column_content( $column, $order_id )
 		case 'gestionar-envio':
 			if ($has_failed){
 				$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
-				$output = "<button id='$column-$order_id' onclick='reintentarRegistro(event, $order_id);' title='$title'>Re-intentar</button>";
+				$output = "<button id='btn-retry-$order_id' onclick='retryAjaxCall(event, $order_id);' title='$title'>Re-intentar</button>";
 			}		
 		break;
     }
 
 	echo $output;
 }
+
+
+if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):
+	?>
+	<script>
+		const BASE_URL   = '<?= get_site_url() ?>';
+		const PLUGIN_URL = '<?= __DIR__ ?>';
+
+		/*
+			Necesito enviarle el tracking (guide_id) y la url del pdf
+		*/
+		function add_invoice_link(order_id, tracking, pdf_url){
+			jQuery('#download-invoice-pdf-' + order_id).replaceWith('<a href="'+ pdf_url +'" target="_blank">Guía # '+ tracking +'</a>')
+		}
+
+		// ok
+		function remove_button(order_id){
+			console.log('order_id', order_id);
+			jQuery('#btn-retry-' + order_id).replaceWith('<span id="#btn-retry-' + order_id + '"></span>')
+		}
+
+		// ok
+		function disable_button(order_id){
+			console.log('order_id ***', order_id);
+			jQuery('#btn-retry-' + order_id).prop("disabled",true)
+		}
+
+		// ok
+		function enable_button(order_id){
+			console.log('order_id', order_id);
+			jQuery('#btn-retry-' + order_id).prop("disabled",false)
+		}
+
+		function retryAjaxCall(event, order_id){
+			event.stopImmediatePropagation();
+			event.preventDefault();
+
+			disable_button(order_id);
+
+			const url  = BASE_URL + '/wp-json/tmh_express/v1/process_order';
+			const data = {
+				"order_id":order_id
+			};
+		
+			jQuery.post({
+				type: "POST",
+				url: url,
+				data: JSON.stringify(data),
+				dataType: 'json',
+				contentType: 'application/json',
+				success: function(res){
+					// console.log('EXITO')
+					// console.log(res.data)
+
+					const thm_order_id = res.data.thm_order_id;
+					const tracking_num = res.data.tracking_num;
+					const pdf_url      = res.data.invoice_url;
+					
+					remove_button(order_id)
+					add_invoice_link(order_id, tracking_num, pdf_url)
+				},
+				error: function(xhr, status, error) {
+					// error handling
+					
+					//console.log('FALLO');
+
+					// Alert o algo
+					//alert(error);
+
+					enable_button(order_id);
+
+					// console.log(xhr);
+					// console.log(status);
+					// console.log(error);
+				}
+			})
+		}
+
+		function sendRetry(event, order_id){
+			event.stopImmediatePropagation();
+			event.preventDefault();
+
+			ajaxCall(order_id);
+			return false;
+		}
+	</script>
+<?php
+endif;
 
 
 
