@@ -699,7 +699,7 @@ class Products
     }
 
     static function updatePrice($pid, $price){
-        update_post_meta( $pid, '_price', $price );
+        update_post_meta($pid, '_price', $price);
         update_post_meta($pid, '_regular_price', $price );
     }
 

@@ -17,7 +17,6 @@ use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Date;
 use boctulus\WooTMHExpress\libs\DB;
 use boctulus\WooTMHExpress\libs\WooTMHExpress;
-use ParagonIE\Sodium\Core\Curve25519\Ge\P2;
 
 require_once __DIR__ . '/helpers/config.php'; 
 require_once __DIR__ . '/helpers/autoloader.php'; // *
@@ -27,11 +26,18 @@ require_once __DIR__ . '/helpers/cli.php';
 require_once __DIR__ . '/id_to_checkout.php'; // agrega metabox con campo de identificacion
 require_once __DIR__ . '/installer/tmh_orders.php';
 
-#if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
+require_once __DIR__ . '/ajax.php';
+
+if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	ini_set('display_errors', 1);
 	ini_set('display_startup_errors', 1);
 	error_reporting(E_ALL);
-#}
+}
+
+
+if (!defined('TMH_SHIPPING_METHOD_LABEL')){
+	define('TMH_SHIPPING_METHOD_LABEL', "TMH");  
+}
 
 
 if (isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order'):
@@ -125,7 +131,7 @@ function custom_orders_list_column_content( $column, $order_id )
 		case 'download-invoice-pdf':		
 			if ($tmh_order_id !== null){
 				$pdf_url = WooTMHExpress::get_pdf_invoice_url($tmh_order_id);
-				$anchor  = 'Recibo de TMH';
+				$anchor  = 'Guía # '. $tracking;
 				$output = "<a href=\"$pdf_url\" alt=\"pdf invoice for tracking '$tracking'\" target=\"_blank\" id=\"$column-$order_id\">$anchor</a>";
 			}
 		break;

@@ -3,86 +3,109 @@
 require_once __DIR__ . '/libs/Files.php';
 require_once __DIR__ . '/libs/Strings.php';
 require_once __DIR__ . '/libs/DB.php';
-require_once __DIR__ . '/libs/Sinergia.php';
+require_once __DIR__ . '/libs/Orders.php';
 require_once __DIR__ . '/libs/Mail.php';
 
 use boctulus\WooTMHExpress\libs\Files;
 use boctulus\WooTMHExpress\libs\Strings;
 use boctulus\WooTMHExpress\libs\DB;
-use boctulus\WooTMHExpress\libs\Sinergia;
+use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Mail;
-use ParagonIE\Sodium\Core\Curve25519\Ge\P2;
+use boctulus\WooTMHExpress\libs\WooTMHExpress;
 
 /*
 	REST
 
 */
 
-function register_at_tmh_express(WP_REST_Request $req)
+function process_order(WP_REST_Request $req)
 {
-    // try {
+    global $wpdb;
+
+    try {        
+        $error = new WP_Error();
+
+        $data = $req->get_body();
+
+        if ($data === null){
+            throw new \Exception("No se recibió la data");
+        }
+
+        $data = json_decode($data, true);
+
+        if ($data === null){
+            throw new \Exception("JSON inválido");
+        }
+
+        $order_id = $data['order_id'] ?? null;
+
+        if (empty($order_id)){
+            $error->add(400, 'order_id es requerido');
+            return $error;
+        }
+
+        if (!Orders::orderExists($order_id)){
+            $error->add(404, 'order_id no existe');
+            return $error;
+        }
+
+        try {
+            $sql   = "SELECT tracking_num, tmh_order_id FROM `{$wpdb->prefix}tmh_orders` WHERE `woo_order_id`=$order_id;";
+            $row = $wpdb->get_row($sql, ARRAY_A);
+
+            $tracking     = $row['tracking_num'];
+            $tmh_order_id = $row['tmh_order_id'];
+      
+            /*
+                Es un "error" pero no es "fatal" y por eso envio 200
+            */
+
+            if (!empty($tracking)){
+                $res = [
+                    'code' => 200,
+                    'message' => "Orden ignorada. La orden '$order_id' ya fue procesada previamente",
+                    'data' => [
+                        "tracking_num" => $tracking,
+                        "tmh_order_id" => $tmh_order_id
+                    ]
+                ];
         
-    //     $error = new WP_Error();
+                $res = new WP_REST_Response($res);
+                $res->set_status(200);
 
-        // if (empty($order_id)){
-        //     $error->add(400, 'order_id es requerido');
-        //     return $error;
-        // }
+                return $res;
+            }
 
-        // if (!DB::orderExists($order_id)){
-        //     $error->add(404, 'order_id no existe en la cola');
-        //     return $error;
-        // }
+           $res = WooTMHExpress::processOrder($order_id);
 
-        // try {
-        //     Sinergia::homologar($order_id);
-
-        //     // No debe llegar hasta ac'a si homologar falla con Excepcion
-        //     $ok = DB::orderDelete($order_id, 'FAIL');
-        // } catch (\Exception $e){	
+           if (empty($res)){
+                throw new \Exception("Error procesando orden '$order_id'");
+           }
+        } catch (\Exception $e){	
     
-        //     // Log del error
-        //     Files::logger($e->getMessage());
+            // Log del error
+            Files::logger($e->getMessage());
 
-        //     $error->add(500, $e->getMessage());
-        //     return $error;
-        // }
-        
-
-        // $ruc_cliente  = Sinergia::get_ruc_from_order($order_id);
-
-        // $tipo = empty($ruc_cliente) ? Sinergia::BOLETA : Sinergia::FACTURA;
+            $error->add(500, $e->getMessage());
+            return $error;
+        }
     
-        // $comprobante = DB::getComprobanteByOrderId($order_id, $tipo);
+        $res = [
+            'code' => 200,
+            'message' => "Orden '$order_id' fue procesada exitosamente",
+            'data' => $res
+        ];
 
-        // // Esto ya ser'ia un Error
-        // if (empty($comprobante)){
-        //     $error->add(404, "Comprobante para order_id = $order_id no existe");
-        //     return $error;
-        // }
+        $res = new WP_REST_Response($res);
+        $res->set_status(200);
 
-        // $pdf_url = Sinergia::getPdfUrl($comprobante);   
-        
+        return $res;
+    } catch (\Exception $e) {
+        $error = new WP_Error();
+        $error->add(500, $e->getMessage());
 
-    //     $res = [
-    //         'code' => 200,
-    //         'message' => 'ok',
-    //         'data' => [
-    //             'comprobante' => $comprobante,
-    //             'url_invoice' => $pdf_url,
-    //         ]
-    //     ];
-
-    //     $res = new WP_REST_Response($res);
-    //     $res->set_status(200);
-
-    //     return $res;
-    // } catch (\Exception $e) {
-    //     $error = new WP_Error();
-    //     $error->add(500, $e->getMessage());
-
-    //     return $error;
-    // }
+        return $error;
+    }
 }
 
 function dummy(){
@@ -97,13 +120,13 @@ function dummy(){
 
 add_action('rest_api_init', function () {
     #	{VERB} /wp-json/xxx/v1/zzz
-    register_rest_route('tmh_express/v1', '/post', array(
+    register_rest_route('tmh_express/v1', '/process_order', array(
         'methods' => 'POST',
-        'callback' => 'register_at_tmh_express',
+        'callback' => 'process_order',
         'permission_callback' => '__return_true'
     ));
 
-    register_rest_route('tmh_express/v1', '/dummy', array(
+    register_rest_route('tmh_express/v1', '/post_dummy', array(
         'methods' => 'POST',
         'callback' => 'dummy',
         'permission_callback' => '__return_true'

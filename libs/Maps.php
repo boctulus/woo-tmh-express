@@ -8,6 +8,8 @@ namespace boctulus\WooTMHExpress\libs;
 
 use boctulus\WooTMHExpress\libs\Strings;
 use boctulus\WooTMHExpress\libs\Arrays;
+use boctulus\WooTMHExpress\libs\Url;
+use boctulus\WooTMHExpress\libs\ApiClient;
 
 /*
     @author Pablo Bozzolo
@@ -26,9 +28,18 @@ class Maps
         $apiKey = 'AIzaSyAJI6R4DUNCfwvQYZJZGltf9qztLnQMzKY'; // hardcoded
 
         // Get JSON results from this request
-        $geo = file_get_contents('https://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($address).'&sensor=false&key='.$apiKey);
 
-        $geo = json_decode($geo, true); // Convert the JSON to an array
+        $client = new ApiClient('https://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($address).'&sensor=false&key='.$apiKey);
+
+        $geo_res = $client
+        ->disableSSL()
+        ->get();
+
+        if ($geo_res->getStatus() != 200){
+            return null;
+        }
+
+        $geo = $geo_res->getResponse()['data'];
 
         if (isset($geo['status']) && ($geo['status'] == 'OK')) {
             $lat = $geo['results'][0]['geometry']['location']['lat']; // Latitude

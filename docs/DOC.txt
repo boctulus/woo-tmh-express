@@ -1,0 +1,37 @@
+
+TMH plugin
+----------
+
+Endpoint /wp-json/tmh_express/v1/process_order
+
+Posibles respuestas
+
+1) Exito
+
+    {
+        "code": 200,
+        "message": "Orden 'xxx' fue procesada exitosamente",
+        "data": {
+            "tracking_num": xxxxxx,
+            "tmh_order_id": xx
+        }
+    }
+
+2) La orden ya habia sido procesada
+
+    {
+        "code": 200,
+        "message": "Orden ignorada. La orden 'xxx' ya fue procesada previamente",
+        "data": {
+            "tracking_num": "xxxxxx",
+            "tmh_order_id": "xx"
+        }
+    }
+
+3) La orden no existe
+
+    {
+        "code": 404,
+        "message": "order_id no existe",
+        "data": null
+    }

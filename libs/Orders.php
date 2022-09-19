@@ -181,6 +181,10 @@ class Orders
         return wc_get_order($order_id);
     }
 
+    static function orderExists($order_id) : bool {
+        return wc_get_order($order_id) !== false;
+    }
+
     // https://stackoverflow.com/a/46690009/980631
     static function getLastOrderId(){
         global $wpdb;

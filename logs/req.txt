@@ -25,9 +25,9 @@ array (
     array (
       'dimensions' => 
       array (
-        'volume' => 250,
-        'weight' => 8.39,
-        'pieces' => 5,
+        'volume' => 516,
+        'weight' => 23,
+        'pieces' => 7,
       ),
       'containt' => 'Prueba',
       'type_product' => 'Documentos',
