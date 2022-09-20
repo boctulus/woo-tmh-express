@@ -19,6 +19,12 @@ return [
     */
 
     'shipping_cost'         => 2,
+
+    /* 
+        Como se aplican los costos de envio: por item (¨per_item¨) o por órden (¨per_order¨)
+    */
+
+    'shipping_calc_tax'     => 'per_item',   
     
     /*
         Condición que dispara comunicación con THM Express
@@ -69,10 +75,4 @@ return [
         'latitude'  => 19.402299677796147,
         'longitude' => -99.183665659261
     ],
-
-    /* 
-        Como se aplican los costos de envio: por item (¨per_item¨) o por órden (¨per_order¨)
-    */
-
-    'shipping_calc_tax'     => 'per_order',   
 ];

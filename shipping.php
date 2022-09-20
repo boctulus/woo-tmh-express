@@ -3,6 +3,7 @@
 use boctulus\WooTMHExpress\libs\WooTMHExpress;
 use boctulus\WooTMHExpress\libs\Orders;
 use boctulus\WooTMHExpress\libs\Files;
+use boctulus\WooTMHExpress\libs\Debug;
 
 // https://woocommerce.com/document/shipping-method-api/
 
@@ -101,17 +102,30 @@ function tmh_shipping_method_init()
             }
 
             /*
-                El calculo de costo 'per_item' no funciona. Solo 'per_order' 
+                El calculo de costo 'per_item' nativamente no funciona. Solo 'per_order' 
 
                 Parece bug en WooCommerce
 
                 https://woocommerce.com/document/shipping-method-api/#section-5
             */
 
+            // Parche
+
+            $qty_items = 0;
+            foreach ($package['contents'] as $item){
+                $qty_items += $item['quantity'];
+            }
+
+            if ($config['shipping_calc_tax'] == 'per_item'){
+                $cost = $config['shipping_cost'] * $qty_items;
+            } else {
+                $cost = $config['shipping_cost'];
+            }
+
             $rate = array(
                 'label'    => TMH_SHIPPING_METHOD_LABEL,
-                'cost'     => $config['shipping_cost'],
-				'calc_tax' => $config['shipping_calc_tax']
+                'cost'     => $cost,
+				'calc_tax' => 'per_order'
             );
 
             // Register the rate
