@@ -11,6 +11,7 @@ if (!defined('TMH_SERVER_ERROR_MSG')){
     define('TMH_STATUS_IF_ERROR', 'processing');
     define('TMH_NO_DIM', "Hay productos sin dimensiones");
     define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
+    define('TMH_THE_COURIER', 'Via TMH');
 }
 
 return [
@@ -28,6 +29,8 @@ return [
     
     /*
         Condición que dispara comunicación con THM Express
+
+        Estados a los que podria pasar la orden: 'processing', 'completed'
     */
 
     'order_status_trigger'  => 'completed',

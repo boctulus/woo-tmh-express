@@ -110,7 +110,9 @@ function custom_orders_list_column_content( $column, $order_id )
 			if ($has_failed){
 				$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
 				$output = "<button id='btn-retry-$order_id' onclick='retryAjaxCall(event, $order_id);' title='$title'>Re-intentar</button>";
-			}		
+			} else {
+				$output = TMH_THE_COURIER;
+			}	
 		break;
     }
 

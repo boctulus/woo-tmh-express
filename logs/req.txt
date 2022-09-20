@@ -10,23 +10,23 @@ array (
     ),
     'destination' => 
     array (
-      'address' => 'calle 5 de Mayo,  Alguna, MX',
-      'latitude' => 19.3476834,
-      'longitude' => -99.0246822,
+      'address' => 'bla bla St.,  -, ES',
+      'latitude' => '0',
+      'longitude' => '0',
     ),
     'contact' => 
     array (
-      'number_identification' => '1344555',
-      'full_name' => 'Romo, Juan Carlos ',
-      'phone' => '4040404',
-      'email' => 'boctulus+1002@gmail.com',
+      'number_identification' => '5555',
+      'full_name' => 'Pepino, Juan ',
+      'phone' => '7778',
+      'email' => 'boctulu333s@gmail.com',
     ),
     'package' => 
     array (
       'dimensions' => 
       array (
-        'volume' => 18,
-        'weight' => 0.5,
+        'volume' => 200,
+        'weight' => 9.5,
         'pieces' => 1,
       ),
       'containt' => 'Prueba',
