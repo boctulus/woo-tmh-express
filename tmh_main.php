@@ -109,7 +109,7 @@ function custom_orders_list_column_content( $column, $order_id )
 		case 'gestionar-envio':
 			if ($has_failed){
 				$title  = Orders::getLastOrderNoteMessage($order_id, 'WooCommerce');
-				$output = "<button id='btn-retry-$order_id' onclick='retryAjaxCall(event, $order_id);' title='$title'>Re-intentar</button>";
+				$output = "<button id='btn-retry-$order_id' onclick='retryAjaxCall(event, $order_id);' title='$title'>".TMH_RETRY_TEXT."</button>";
 			} else {
 				$output = TMH_THE_COURIER;
 			}	
