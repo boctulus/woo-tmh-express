@@ -6,12 +6,12 @@
 */
 
 if (!defined('TMH_SERVER_ERROR_MSG')){
+    define('TMH_STATUS_IF_ERROR', 'processing'); //
     define('TMH_SERVER_ERROR_MSG', 'Falla en el servidor, re-intente más tarde por favor. ');
     define('TMH_TODO_OK', 'Procesado exitosamente por TMH');
-    define('TMH_STATUS_IF_ERROR', 'processing');
     define('TMH_NO_DIM', "Hay productos sin dimensiones");
     define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
-    define('TMH_THE_COURIER', 'TMH');
+    define('TMH_THE_COURIER', 'TMH Express');
     define('TMH_RETRY_TEXT', 'Re-intentar');
 }
 
@@ -26,7 +26,7 @@ return [
         Como se aplican los costos de envio: por item (¨per_item¨) o por órden (¨per_order¨)
     */
 
-    'shipping_calc_tax'     => 'per_item',   
+    'shipping_calc_tax'     => 'per_order',   
     
     /*
         Condición que dispara comunicación con THM Express

@@ -1,5 +1,10 @@
 array (
-  'data' => NULL,
-  'http_code' => 0,
-  'errors' => 'Could not resolve host: tmhexpress.uc.r.appspot.com',
+  'data' => 
+  array (
+    'order_id' => 39,
+    'guide' => 780328,
+    'message' => 'La orden a sido creada de forma exitosa.',
+  ),
+  'http_code' => 200,
+  'errors' => '',
 )
