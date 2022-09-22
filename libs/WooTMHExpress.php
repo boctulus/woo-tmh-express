@@ -26,7 +26,7 @@ class WooTMHExpress
         # Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
         if (isset($_SESSION['server_not_before']) && (time() < $_SESSION['server_not_before'])){
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
+            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -141,7 +141,7 @@ class WooTMHExpress
 
             if ($recoleccion_res['http_code'] != 200){
                 $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}. ";
-                $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
+                $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
 
                 $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
                 SET try_count=try_count+1 
@@ -154,7 +154,7 @@ class WooTMHExpress
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
+            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -168,7 +168,7 @@ class WooTMHExpress
         #Files::dd(__LINE__ . ' - '. __FUNCTION__);
         
         if (empty($recoleccion_res)){				
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
+            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -180,7 +180,7 @@ class WooTMHExpress
         }
         
         if (!isset($recoleccion_res['data']['order_id'])){
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
+            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
             return; //
         }	
 
@@ -189,7 +189,7 @@ class WooTMHExpress
         $msg           = $recoleccion_res['data']['message']  ?? null;
 
         if (empty($tmh_order_id)){
-            $order->update_status(TMH_STATUS_IF_ERROR, TMH_SERVER_ERROR_MSG. 'Code r004. Technical detail: respuesta sin numero de guia');
+            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG. 'Code r004. Technical detail: respuesta sin numero de guia');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -243,7 +243,7 @@ class WooTMHExpress
         $token = $config['token']; 
 
         if (\boctulus\WooTMHExpress\helpers\is_cli())
-            dd($ruta, 'ENDPOINT *****');
+            Debug::dd($ruta, 'ENDPOINT *****');
 
         $client = (new ApiClient($ruta));
 

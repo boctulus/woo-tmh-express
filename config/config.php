@@ -6,13 +6,12 @@
 */
 
 if (!defined('TMH_SERVER_ERROR_MSG')){
-    define('TMH_STATUS_IF_ERROR', 'processing'); //
     define('TMH_SERVER_ERROR_MSG', 'Falla en el servidor, re-intente más tarde por favor. ');
     define('TMH_TODO_OK', 'Procesado exitosamente por TMH');
     define('TMH_NO_DIM', "Hay productos sin dimensiones");
-    define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
     define('TMH_THE_COURIER', 'TMH Express');
     define('TMH_RETRY_TEXT', 'Re-intentar');
+    define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
 }
 
 return [
@@ -35,6 +34,8 @@ return [
     */
 
     'order_status_trigger'  => 'completed',
+
+    'order_status_error'    => 'processing',
 
     /*
         Token provisto por TMH Express`
