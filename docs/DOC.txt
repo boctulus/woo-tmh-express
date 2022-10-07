@@ -1,37 +1,68 @@
+PLUGIN WOOCOMMERCE "TMH EXPRESS"
+--------------------------------
 
-TMH plugin
-----------
+Version 1.1.0
 
-Endpoint /wp-json/tmh_express/v1/process_order
+El plugin para WordPress, compatible con WooCommerce, gestiona los envios por la transportadora TMH Express de México.
 
-Posibles respuestas
+# Instalación
 
-1) Exito
+La tienda recibe un archivo zip, lo instala y lo activa.
 
-    {
-        "code": 200,
-        "message": "Orden 'xxx' fue procesada exitosamente",
-        "data": {
-            "tracking_num": xxxxxx,
-            "tmh_order_id": xx
-        }
-    }
+Luego que el plugin fue instalado y activado deberían poder visualizarse dos nuevas columnas en 
 
-2) La orden ya habia sido procesada
+	WooCommerce > Pedidos (Órdenes)
 
-    {
-        "code": 200,
-        "message": "Orden ignorada. La orden 'xxx' ya fue procesada previamente",
-        "data": {
-            "tracking_num": "xxxxxx",
-            "tmh_order_id": "xx"
-        }
-    }
+... bajo el nombre de:
 
-3) La orden no existe
+	"Gestión de envios"
+y
+	"Descarga de PDF"
 
-    {
-        "code": 404,
-        "message": "order_id no existe",
-        "data": null
-    }
+
+# Configuración
+
+Luego de haber instalado y activado el plugin encontrará un nuevo panel en 
+
+    Ajustes > Config. TMH Express
+
+Qué se debe configurar?
+
+De mínima cuanto se quiere cobrar por envio y las credenciales necesarias para conectarse con TMH Express.
+
+	. "Costo de envio". O sea el valor en la moneda de la tienda en que cobramos por el envio.
+	
+	. "Token". Clave provista por TMH Express.
+
+	. "Costo por órden o ítem". Ya sea si queremos que se cobre la cantidad "shipping_cost" por órden o bien por ítem en el despacho. Los valores posibles son "per_order" y "per_item".
+
+Además, podemos querer configurar,...
+
+	. "Estado de órden que dispara la comunicación con TMH". O sea el estado de la órden que disparará el evento de comunicación con TMH Express. Posibilidades: 'processing' y 'completed'
+
+	. "Estado de órden que dispara la comunicación con TMH". O sea el estado de la órden al que la órden se moverá si llegara a ocurrir un fallo en la comunicación con TMH Express.
+
+Configuración adicional 
+
+* generalmente no es necesaria.
+
+Por otro lado, hay un archivo config.php en la carpeta config que contiene parámetros que de ser necesarios pueden editarse ya sea antes de subir el plugin a WordPress o... desde el editor de plugins de WooCommerce o usando cualquier otro editor o via FTP.
+
+El archivo config.php posee unas constantes que hacen referencia a textos que podríamos estar interesados en cambiar por cuestiones de personalización:
+
+	define('TMH_SERVER_ERROR_MSG', 'Falla en el servidor, re-intente más tarde por favor. ');
+    define('TMH_TODO_OK', 'Procesado exitosamente por TMH');
+    define('TMH_NO_DIM', "Hay productos sin dimensiones");
+    define('TMH_THE_COURIER', 'TMH Express');
+    define('TMH_RETRY_TEXT', 'Re-intentar');
+
+Hay más parámetros en el archivo config.php pero los mencionados serían los principales.
+
+
+# Extras 
+
+En caso de fallar la comunicación con TMH Express, aparecerá en Pedidos (órdenes) en la columna de "gestionar envio" un botón de re-intentar. 
+
+Sobre el botón puede verse un texto con el mensaje de error y si se ingresa a la órden también puede verse en detalle.
+
+

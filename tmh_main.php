@@ -28,16 +28,14 @@ require_once __DIR__ . '/installer/tmh_orders.php';
 
 require_once __DIR__ . '/ajax.php';
 
-if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
-	ini_set('display_errors', 1);
-	ini_set('display_startup_errors', 1);
-	error_reporting(E_ALL);
-}
-
 
 if (!defined('TMH_SHIPPING_METHOD_LABEL')){
 	define('TMH_SHIPPING_METHOD_LABEL', "TMH");  
 }
+
+require_once __DIR__ . '/add_settings.php';
+
+
 
 // ADDING 2 NEW COLUMNS WITH THEIR TITLES
 add_filter( 'manage_edit-shop_order_columns', 'boctulus\WooTMHExpress\custom_shop_order_column', 20 );

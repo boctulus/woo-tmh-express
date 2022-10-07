@@ -11,7 +11,7 @@ if (!defined('TMH_SERVER_ERROR_MSG')){
     define('TMH_NO_DIM', "Hay productos sin dimensiones");
     define('TMH_THE_COURIER', 'TMH Express');
     define('TMH_RETRY_TEXT', 'Re-intentar');
-    define('TMH_SERVER_TIME_BEFORE_RETRY', 60);  // seconds
+    define('TMH_SERVER_TIME_BEFORE_RETRY', 2);  // seconds
 }
 
 return [
@@ -19,13 +19,13 @@ return [
         Costo del envio
     */
 
-    'shipping_cost'         => 2,
+    'tmh_shipping_cost'         => 50, 
 
     /* 
         Como se aplican los costos de envio: por item (¨per_item¨) o por órden (¨per_order¨)
     */
 
-    'shipping_calc_tax'     => 'per_order',   
+    'shipping_calculation'     => 'per_order',   
     
     /*
         Condición que dispara comunicación con THM Express
@@ -41,7 +41,7 @@ return [
         Token provisto por TMH Express`
     */
 
-    'token' => 'iZjL8MujTP8nb1MbfYeCKm2OOBxgyEXY',
+    'token' => 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 
     /*
         Input en el checkout
@@ -66,14 +66,14 @@ return [
 
     'namespace' => 'boctulus\WooTMHExpress',
 
-    'url_base_endpoints' => 'https://tmhexpress.uc.r.appspot.com/api/',
+    'url_base_endpoints' => 'https://tmhexpress.com.mx/api/',
 
     'endpoints' => [
         'create_order' => 'createOrder',
         'get_orders' => 'orders'
     ],
 
-    'url_invoice_pdfs'  => 'https://tmhexpress.uc.r.appspot.com/print_guide',
+    'url_invoice_pdfs'  => 'https://tmhexpress.com.mx/print_guide',
 
     'origin' => [
         'address'   => 'Carlos B Zetina 138, Escandón I Seccion, Miguel Hidalgo, CDMX',

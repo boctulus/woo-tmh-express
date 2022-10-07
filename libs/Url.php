@@ -120,9 +120,9 @@ class Url
 		return $result;
 	}	
 
-	static function queryString(){
+    static function query(){
 		return static::parseStrQuery($_SERVER['QUERY_STRING']);		
-	}	
+	}
 
     static function getQueryParam(string $url, string $param){
         $query = parse_url($url, PHP_URL_QUERY);

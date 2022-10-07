@@ -40,7 +40,7 @@ function after_place_order($order_id, $status_from, $status_to)
 
     # Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
-    if( $status_to == $config['order_status_trigger'] ) 
+    if( $status_to == get_option('tmh_order_status_trigger') ) 
     {
         WooTMHExpress::processOrder($order_id);    
     }	
@@ -116,10 +116,12 @@ function tmh_shipping_method_init()
                 $qty_items += $item['quantity'];
             }
 
-            if ($config['shipping_calc_tax'] == 'per_item'){
-                $cost = $config['shipping_cost'] * $qty_items;
+            $shipping_cost = get_option('tmh_shipping_cost');
+
+            if (get_option('tmh_shipping_calculation') == 'per_item'){
+                $cost = $shipping_cost * $qty_items;
             } else {
-                $cost = $config['shipping_cost'];
+                $cost = $shipping_cost;
             }
 
             $rate = array(

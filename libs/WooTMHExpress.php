@@ -1,7 +1,8 @@
 <?php
 
 /*
-    @author  Pablo Bozzolo boctulus@gmail.com
+    @author Pablo Bozzolo < boctulus@gmail.com >
+    +44 754 1919915
 */
 
 namespace boctulus\WooTMHExpress\libs;
@@ -26,7 +27,7 @@ class WooTMHExpress
         # Files::dd(__LINE__ . ' - '. __FUNCTION__);
 
         if (isset($_SESSION['server_not_before']) && (time() < $_SESSION['server_not_before'])){
-            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
+            $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG . 'Code g500. Technical detail: waiting for server recovery');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -73,8 +74,8 @@ class WooTMHExpress
             Campos obligatorios (hardcodeados)
         */
 
-        $package["containt"]     = "Prueba";
-        $package["type_product"] = "Documentos";
+        $package["content"]      = "Prueba";
+        $package["product_type"] = "Documentos";
 
 
         $timezone = date_default_timezone_get();        
@@ -108,10 +109,6 @@ class WooTMHExpress
         $shipping_country    = $order->get_shipping_country();
         $shipping_note       = NULL;
         
-        //debug($order, 'ORDER OBJECT');
-    
-        # Files::dd(__LINE__ . ' - '. __FUNCTION__);
-                    
         /*
             Cotizacion
         */
@@ -119,7 +116,7 @@ class WooTMHExpress
         $data = [
             "dest_address" => "$shipping_address_1, $shipping_address_2, $shipping_city, $shipping_country",
             "customer" => [
-                "number_identification" => WooTMHExpress::get_id_num_from_order($order_id),
+                "identification_number" => WooTMHExpress::get_id_num_from_order($order_id),
                 "full_name" => "$shipping_last_name, $shipping_first_name ",
                 "phone"     => $billing_phone,
                 "email"     => $billing_email,
@@ -141,7 +138,7 @@ class WooTMHExpress
 
             if ($recoleccion_res['http_code'] != 200){
                 $error = "{$recoleccion_res['errors']} - HTTP CODE: {$recoleccion_res['http_code']}. ";
-                $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
+                $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG . 'Code r001. Technical detail: '. $error);
 
                 $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
                 SET try_count=try_count+1 
@@ -154,7 +151,7 @@ class WooTMHExpress
         } catch (\Exception $e){
             $_SESSION['server_error_time'] = time();
             $_SESSION['server_not_before'] = $_SESSION['server_error_time'] + TMH_SERVER_TIME_BEFORE_RETRY;
-            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
+            $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG . 'Code r002. Technical detail: '. $e->getMessage());
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -168,7 +165,7 @@ class WooTMHExpress
         #Files::dd(__LINE__ . ' - '. __FUNCTION__);
         
         if (empty($recoleccion_res)){				
-            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
+            $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG. 'Code r002B. Technical detail: respuesta vacia');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -178,18 +175,25 @@ class WooTMHExpress
 
             return; //
         }
-        
-        if (!isset($recoleccion_res['data']['order_id'])){
-            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
-            return; //
-        }	
 
-        $tracking      = $recoleccion_res['data']['guide']    ?? null;
+        $tracking      = $recoleccion_res['data']['tracking_number'] ?? null;
         $tmh_order_id  = $recoleccion_res['data']['order_id'] ?? null;
         $msg           = $recoleccion_res['data']['message']  ?? null;
 
+        
         if (empty($tmh_order_id)){
-            $order->update_status($config['order_status_error'], TMH_SERVER_ERROR_MSG. 'Code r004. Technical detail: respuesta sin numero de guia');
+            $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG.  'Code r003. Technical detail: tracking no encontrado');
+            Files::localLogger("Error. Para el pedido con id ='$order_id' no se encontro el order_id. Msg: $msg");
+            return; //
+        }	
+        if (empty($tracking)){
+            Files::localLogger("Error. Para el pedido con id ='$order_id' no se encontro tracking_number. Msg: $msg");
+            return;
+        }
+    
+
+        if (empty($tmh_order_id)){
+            $order->update_status(get_option('tmh_order_status_error'), TMH_SERVER_ERROR_MSG. 'Code r004. Technical detail: respuesta sin numero de guia');
 
             $sql = "UPDATE `{$wpdb->prefix}tmh_orders` 
             SET try_count=try_count+1 
@@ -211,7 +215,7 @@ class WooTMHExpress
         //var_dump($sql). "\r\n\r\n";
         $wpdb->query($sql);
         
-        $order->update_status($config['order_status_trigger'], $shipping_note);  
+        $order->update_status(get_option('tmh_order_status_trigger'), $shipping_note);  
         
         return [
             'tracking_num' => $tracking,
@@ -240,7 +244,7 @@ class WooTMHExpress
         $config = \boctulus\WooTMHExpress\helpers\config();
 
         $ruta  = $config['url_base_endpoints'] . $endpoint;
-        $token = $config['token']; 
+        $token = get_option('tmh_token'); 
 
         if (\boctulus\WooTMHExpress\helpers\is_cli())
             Debug::dd($ruta, 'ENDPOINT *****');
@@ -270,18 +274,17 @@ class WooTMHExpress
     */
     static function registrar($data, $endpoint)
     {
-        Files::localDump(
-            [
-                'url' => $endpoint,
-                'body' => $data
-            ], 'req.txt'); /////////////
+        // Files::localDump([
+        //     'url' => $endpoint,
+        //     'body' => $data
+        // ], 'req.txt'); 
 
         $response = static::getClient($endpoint)
         ->setBody($data)
         ->post()
         ->getResponse();
 
-        Files::localDump($response, 'res.txt');  ///////////
+        // Files::localDump($response, 'res.txt');  
 
         return $response;
     }
@@ -322,7 +325,7 @@ class WooTMHExpress
                     'weight' => 1,
                 ),
 			'containt' => 'Prueba',
-			'type_product' => 'Documentos',
+			'product_type' => 'Documentos',
 		),
     */
     static function registrarEnvio($dest_address, $customer_data, $package_data){

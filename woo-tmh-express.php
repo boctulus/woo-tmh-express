@@ -1,12 +1,13 @@
 <?php
 
-namespace boctulus\WooTMHExpress;
+use boctulus\WooTMHExpress\libs\Debug;
+use boctulus\WooTMHExpress\libs\Files;
 
 /*
 Plugin Name: Woo TMH Express
 Description: Plugin que permite administrar envios via TMH Express
-Version: 1.0.0
-Author: boctulus
+Version: 1.0.1
+Author: boctulus < boctulus@gmail.com >
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
